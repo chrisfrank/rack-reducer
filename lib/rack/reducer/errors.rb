@@ -12,6 +12,12 @@ module Rack
           "args[:filters] must respond_to `reduce`. Try an array or hash."
         end
       end
+
+      class Unfilterable < StandardError
+        def message
+          "Pass a Rack-compatible :params => hash to Rack::Reducer.call()"
+        end
+      end
     end
   end
 end

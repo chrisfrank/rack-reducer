@@ -1,0 +1,24 @@
+module Rack
+  class Reducer
+  # refine a few core classes in Rack::Reducer's scope only
+    module Refinements
+      refine Hash do
+        def symbolize_keys
+          each_with_object({}) do |(key, val), hash|
+            hash[key.to_sym] = val.is_a?(Hash) ? val.symbolize_keys : val
+          end
+        end
+      end
+
+      refine Proc do
+        def required_argument_names
+          parameters.select { |arg| arg[0] == :keyreq }.map(&:last)
+        end
+
+        def all_argument_names
+          parameters.map(&:last)
+        end
+      end
+    end
+  end
+end

@@ -1,54 +1,47 @@
 require 'rack'
-require_relative 'reducer/reducible'
+require_relative 'reducer/refinements'
 require_relative 'reducer/errors'
 
 module Rack
   # Use request params to filter a collection
   class Reducer
-    using Reducible
+    using Refinements
 
-    def initialize(collection, filters)
-      @collection = collection
-      @filters = filters
-      validate
+    DEFAULTS = {
+      data: [],
+      filters: [],
+      key: 'rack.reduction',
+      params: nil
+    }.freeze
+
+    def self.call(options = {})
+      new(nil, options).reduce
     end
 
-    def validate
-      @filters.respond_to?(:reduce) || raise(Errors::Unreducable)
-      @filters.all? do |filter|
-        filter.respond_to?(:call) || raise(Errors::Uncallable)
-      end
+    def initialize(app, props)
+      @app = app
+      @props = DEFAULTS.merge(props)
     end
 
     def call(env)
-      @env = env
-      @_request = Rack::Request.new(env)
-      [status, headers, body]
-    end
-
-    def body
-      reduce.all.to_s
-    end
-
-    def status
-      200
-    end
-
-    def headers
-      {}
-    end
-
-    def params
-      @_request.params
+      @params = Rack::Request.new(env).params.symbolize_keys
+      @app.call env.merge(@props[:key] => reduce)
     end
 
     def reduce
-      symbolized_params = params.symbolize_keys
-      @filters.reduce(@collection) do |data, fn|
-        args = fn.required_args
-        params = symbolized_params.slice(*args)
-        params.keys.to_set == args ? data.instance_exec(params, &fn) : data
-      end
+      @props[:filters].reduce(@props[:data], &method(:apply_filter))
+    end
+
+    private
+
+    def params
+      @params ||= @props[:params].symbolize_keys
+    end
+
+    def apply_filter(data, fn)
+      requirements = fn.required_argument_names.to_set
+      return data unless params.slice(*requirements).keys.to_set == requirements
+      data.instance_exec(params.slice(*fn.all_argument_names), &fn)
     end
   end
 end
