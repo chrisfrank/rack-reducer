@@ -6,7 +6,7 @@ require 'spec_helper'
 
     it 'responds with unfiltered data when filter params are empty' do
       get('/artists') do |res|
-        DB[:artists].each { |artist| expect(res.body).to include(artist[:name]) }
+        ARTISTS.each { |artist| expect(res.body).to include(artist[:name]) }
       end
     end
 
@@ -39,5 +39,9 @@ require 'spec_helper'
     end
 
     it 'handles filters with default keywords'
+
+    it 'works with rails scopes'
+
+    it 'handles errors sensibly'
   end
 end
