@@ -1,21 +1,29 @@
 Rack::Reducer
 =============
-Filter your app's data via request params, safely and methodically.
+Safely map URL params to database filters, in any Rack app.
+If your users need to filter data by making HTTP requests, this gem can help.
 
-Rack::Reducer solves the same problem has Platformatec’s
-[HasScope](https://github.com/plataformatec/has_scope), but it works in any Rack
-app, with any ORM, and has a simpler, more functional API. Where `has_scope`
-requires you to spread filters across your Controllers and Models, Rack::Reducer
-lets you put code wherever you like, and encourages you to keep it all in one
-place.
+Rack::Reducer solves the same problem has [Platformatec][1]’s excellent 
+[HasScope][2], but it works in any Rack app, with any ORM, and has a simpler,
+more functional API. It also works with no ORM at all.
+
+If you're working in Rails, see the [Rails](#rails) section below for more
+on which gem might best fit your needs.
 
 Install
 -------
 Add `rack-reducer` to your Gemfile:
-`gem 'rack-reducer', require: 'rack/reducer'`
+
+```ruby
+gem 'rack-reducer', require: 'rack/reducer'
+```
 
 If your app doesn't `Bundler.require` your whole Gemfile, be sure to
-`require rack/reducer` in your code when you need it.
+
+```ruby
+require 'rack/reducer'
+```
+when you need it.
 
 Use
 ---
@@ -34,6 +42,7 @@ You can use Rack::Reducer as a mixin on your models:
 
 ```ruby
 # app/models/artist.rb
+
 class Artist < RailsLike::Model
   extend Rack::Reducer
   reduces self.all, filters: [
@@ -43,21 +52,28 @@ class Artist < RailsLike::Model
 end
 ```
 
+And call `Model.reduce(params)` in your controllers:
+
 ```ruby
 # app/controllers/artists_controller.rb
+
 class ArtistsController < ApplicatonController
   def index
     @artists = Artist.reduce(params)
     @artists.to_json
   end
 end
+
+# GET /artists?name=blake&genre=electronic
+# returns e.g. [{ "name": "James Blake", "genre": "electronic" }]
 ```
 
 #### Functional style
-You can also call Rack::Reducer as a function:
+Alternatively, you can call Rack::Reducer as a function:
 
 ```ruby
-# cool_sinatra_app.rb
+# a_sinatra_app.rb
+
 class App < Sinatra::Base
   FILTERS = [
     ->(:name) { where('lower(name) like ?', name.downcase) },
@@ -65,14 +81,13 @@ class App < Sinatra::Base
   ]
 
   get '/artists' do
-    @artists = Rack::Reducer.call(
-      params,
-      dataset: Artist.all,
-      filters: FILTERS
-    )
-    @artists.to_json # [{ name: 'James Blake', genre: 'electronic' }]
+    @artists = Rack::Reducer.call(params, dataset: Artist.all, filters: FILTERS)
+    @artists.to_json
   end
 end
+
+# GET /artists?name=blake&genre=alternative
+# returns e.g. [{ "name": "Blake Mills", "genre": "alternative" }]
 ```
 
 The mixin style enforces more conventions, and is a Railsier way of writing.
@@ -80,18 +95,23 @@ The functional style is more powerful. Both styles are tested and supported.
 
 Framework-specific Examples
 ---------------------------
-- [Sinatra](#sinatra)
-- [Roda](#roda)
-- [Rack Middleware](#rack-middleware)
+These examples apply Rack::Reducer in different frameworks, with a different
+ORM in each example. The pairing of Framework/ORM is arbitrary.
+[Sinatra][sinatra] w/[Sequel][sequel] could work just as well with
+ActiveRecord, Middleware/Hash could use [Mongoid][mongoid], and so on.
+
+- [Sinatra](#sinatra-w-sequel-model)
+- [Roda](#roda-w-sequel-dataset)
+- [Rack Middleware](#rack-middleware-w-hash)
 - [Rails](#rails)
 
-### Sinatra
+### Sinatra w/Sequel::Model
 TODO
 
-### Roda
+### Roda w/Sequel::Dataset
 TODO
 
-### Rack Middleware
+### Rack Middleware w/Hash
 TODO
 
 ### Rails
@@ -100,3 +120,14 @@ TODO
 How Rack::Reducer Works
 -----------------------
 TODO
+
+Contributing
+------------
+TODO
+
+
+[1]: http://plataformatec.com.br/
+[2]: https://github.com/plataformatec/has_scope
+[sinatra]: https://github.com/sinatra/sinatra
+[sequel]: https://github.com/jeremyevans/sequel
+[mongoid]: https://github.com/mongodb/mongoid

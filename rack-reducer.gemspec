@@ -3,8 +3,8 @@ Gem::Specification.new do |spec|
   spec.version       = '0.1.0'
   spec.authors       = ['Chris Frank']
   spec.email         = ['chris.frank@thefutureproject.org']
-  spec.description   = 'Safe, simple data filtering via params, in any Rack app'
-  spec.summary       = 'Safe, simple data filtering via params, in any Rack app'
+  spec.description   = 'Safely map URL params to database filters, in any Rack app.'
+  spec.summary       = 'Safely map URL params to database filters, in any Rack app.'
   spec.homepage      = 'https://github.com/chrisfrank/rack-reducer'
   spec.license       = 'MIT'
 
