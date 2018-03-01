@@ -8,6 +8,11 @@ module Rack
             hash[key.to_sym] = val.is_a?(Hash) ? val.symbolize_keys : val
           end
         end
+
+        def satisfies?(requirements)
+          !requirements.empty? &&
+            slice(*requirements).keys.to_set == requirements
+        end
       end
 
       refine Proc do

@@ -3,7 +3,7 @@ class ArtistsController < ApplicationController
 
   # GET /artists
   def index
-    @artists = Artist.all
+    @artists = Artist.reduce(params)
 
     render json: @artists
   end
@@ -49,3 +49,5 @@ class ArtistsController < ApplicationController
       params.require(:artist).permit(:name, :genre, :last_release)
     end
 end
+      #filters: [:search_genre, :search_name].map { |m| method(m).to_proc },
+

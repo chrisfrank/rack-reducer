@@ -10,3 +10,4 @@ ActiveRecord::Schema.define do
 
 end
 
+ARTISTS.each { |artist| Artist.create(artist) }

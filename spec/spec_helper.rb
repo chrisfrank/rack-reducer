@@ -1,11 +1,10 @@
-ENV['RACK_ENV'] = ENV['RAILS_ENV'] = 'test'
 require 'bundler/setup'
 Bundler.setup
 require 'pry'
 require 'rack/test'
 require 'rack/reducer'
 require_relative 'fixtures'
-require_relative 'support'
+require_relative 'behavior'
 
 RSpec.configure do |config|
   config.color = true
