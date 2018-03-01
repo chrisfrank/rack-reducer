@@ -1,4 +1,16 @@
 class Artist < ApplicationRecord
+  extend Rack::Reducer
+  reduces all, via: [
+    # filters can call class methods...
+    ->(genre:) { search_genre(genre) },
+    # or scopes...
+    ->(name:) { by_name(name) },
+    # or inline ActiveRecord queries
+    lambda { |released_before:|
+      where('last_release < ?', released_before)
+    },
+  ]
+
   scope :by_name, lambda { |name|
     where('lower(name) like ?', "%#{name.downcase}%")
   }
@@ -6,19 +18,4 @@ class Artist < ApplicationRecord
   def self.search_genre(genre)
     where('lower(genre) like ?', "%#{genre.downcase}%")
   end
-
-  def self.reduce(params)
-    Rack::Reducer.call(data: self.all, params: params, filters: FILTERS)
-  end
-
-  FILTERS = [
-    # filters can call class methods...
-    ->(genre:) { self.search_genre(genre) },
-    # or scopes...
-    ->(name:) { self.by_name(name) },
-    # or inline ActiveRecord queries
-    lambda { |released_before:|
-      where('last_release < ?', released_before)
-    },
-  ]
 end

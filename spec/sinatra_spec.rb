@@ -5,37 +5,35 @@ require 'json'
 require 'sequel'
 
 class SinatraTest < Sinatra::Base
-    DB = Sequel.sqlite
+  DB = Sequel.sqlite
 
-    DB.create_table :artists do
-      String :name
-      String :genre
-    end
+  DB.create_table :artists do
+    String :name
+    String :genre
+  end
 
-    class Artist < Sequel::Model
-      plugin :json_serializer
+  class Artist < Sequel::Model
+    plugin :json_serializer
+    extend Rack::Reducer
+    reduces dataset, via: [
+      ->(genre:) { grep(:genre, "%#{genre}%", case_insensitive: true) },
+      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
+    ]
 
-      def self.reduce(params)
-        Rack::Reducer.call(
-          data: dataset,
-          filters: [
-            ->(genre:) { grep(:genre, "%#{genre}%", case_insensitive: true) },
-            ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-          ],
-          params: params,
-        )
-      end
-    end
+  end
 
-    ARTISTS.each { |artist| Artist.create(artist) }
+  ARTISTS.each { |artist| Artist.create(artist) }
 
-    get '/artists' do
-      @artists = Artist.reduce(params)
-      @artists.all.to_json
-    end
+  get '/artists' do
+    @artists = Artist.reduce(params)
+    @artists.to_json
+  end
 end
-
 
 describe SinatraTest do
   it_behaves_like Rack::Reducer
+
+  context 'performance' do
+    it 'behaves comparably to hand-filtering params'
+  end
 end

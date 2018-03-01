@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 module Rack
-  class Reducer
-  # refine a few core classes in Rack::Reducer's scope only
+  module Reducer
+    # refine a few core classes in Rack::Reducer's scope only
     module Refinements
       refine Hash do
         def symbolize_keys

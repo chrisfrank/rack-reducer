@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 module Rack
-  class Reducer
+  module Reducer
     # convert params from Sinatra, Rails, Roda, etc into a symbol hash
     module Parser
       def self.call(data)

@@ -34,6 +34,4 @@ shared_examples_for Rack::Reducer do
       expect(response.body).not_to include('Blake Mills')
     end
   end
-
-  it 'handles filters with default keywords'
 end
