@@ -100,15 +100,15 @@ ORM in each example. The pairing of Framework/ORM is arbitrary.
 [Sinatra][sinatra]/[Sequel][sequel] could work just as well with ActiveRecord,
 Middleware/Hash could use Mongoid, and so on.
 
-- [Sinatra](#sinatra-sequelmodel)
-- [Roda](#roda-sequeldataset)
+- [Sinatra](#sinatrasequelmodel)
+- [Roda](#rodasequeldataset)
 - [Rack Middleware](#rack-middlewarehash)
 - [Rails](#rails)
 
 ### Sinatra/Sequel::Model
 TODO
 
-### Roda w/Sequel::Dataset
+### Roda/Sequel::Dataset
 TODO
 
 ### Rack Middleware/Hash
