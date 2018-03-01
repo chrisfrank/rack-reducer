@@ -97,21 +97,21 @@ Framework-specific Examples
 ---------------------------
 These examples apply Rack::Reducer in different frameworks, with a different
 ORM in each example. The pairing of Framework/ORM is arbitrary.
-[Sinatra][sinatra] w/[Sequel][sequel] could work just as well with
-ActiveRecord, Middleware/Hash could use [Mongoid][mongoid], and so on.
+[Sinatra][sinatra]/[Sequel][sequel] could work just as well with ActiveRecord,
+Middleware/Hash could use Mongoid, and so on.
 
-- [Sinatra](#sinatra-w-sequel-model)
-- [Roda](#roda-w-sequel-dataset)
-- [Rack Middleware](#rack-middleware-w-hash)
+- [Sinatra](#sinatra-sequelmodel)
+- [Roda](#roda-sequeldataset)
+- [Rack Middleware](#rack-middlewarehash)
 - [Rails](#rails)
 
-### Sinatra w/Sequel::Model
+### Sinatra/Sequel::Model
 TODO
 
 ### Roda w/Sequel::Dataset
 TODO
 
-### Rack Middleware w/Hash
+### Rack Middleware/Hash
 TODO
 
 ### Rails
@@ -130,4 +130,3 @@ TODO
 [2]: https://github.com/plataformatec/has_scope
 [sinatra]: https://github.com/sinatra/sinatra
 [sequel]: https://github.com/jeremyevans/sequel
-[mongoid]: https://github.com/mongodb/mongoid
