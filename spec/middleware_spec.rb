@@ -6,16 +6,16 @@ require 'json'
 # and respond with env['rack.reduction'].to_json
 module MiddlewareTest
   OPTIONS = {
-    data: ARTISTS,
+    dataset: ARTISTS,
     filters: [
       ->(genre:) { select { |item| item[:genre].match(/#{genre}/i) } },
       ->(name:) { select { |item| item[:name].match(/#{name}/i) } }
     ],
   }
 
-  def self.app(options = OPTIONS)
+  def self.app
     Rack::Builder.new do
-      use Rack::Reducer, options
+      use Rack::Reducer, OPTIONS
       run ->(env) { [200, {}, [env['rack.reduction'].to_json]] }
     end
   end

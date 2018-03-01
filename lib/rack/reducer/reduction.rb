@@ -5,12 +5,13 @@ require_relative 'parser'
 
 module Rack
   module Reducer
-    # apply filter functions to a reducible dataset
+    # call `reduce` on a params hash, filtering data via lambdas with
+    # matching keyword arguments
     class Reduction
-      using Refinements
+      using Refinements # augment Hash & Proc inside this scope
 
       DEFAULTS = {
-        data: [],
+        dataset: [],
         filters: [],
         key: 'rack.reduction',
         params: nil
@@ -21,13 +22,15 @@ module Rack
         @props = DEFAULTS.merge(props)
       end
 
+      # when mounted as middleware, set env[@props[:key]] to the output
+      # of self.reduce, then call the next app in the middleware stack
       def call(env)
         @params = Rack::Request.new(env).params.symbolize_keys
         @app.call env.merge(@props[:key] => reduce)
       end
 
       def reduce
-        @props[:filters].reduce(@props[:data], &method(:apply_filter))
+        @props[:filters].reduce(@props[:dataset], &method(:apply_filter))
       end
 
       private
