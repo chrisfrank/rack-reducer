@@ -222,7 +222,7 @@ change the `env` key by passing a new name as option to `use`:
 # config.ru
 use Rack::Reducer, key: 'myapp.custom_key', dataset: ARTISTS, filters: [
   #an array of lambdas
-],
+]
 ```
 
 ### Rails/Advanced
