@@ -4,9 +4,9 @@ Safely map URL params to database filters, in any Rack app. If your users need
 to filter or sort data by making HTTP requests, this gem can help.
 
 If you're working in Rails, note that Rack::Reducer solves the same problem
-as [Platformatec][1]’s excellent [HasScope][2]. Unlike HasScope, Rack::Reducer
-works in any Rack app, with any ORM, or without an ORM at all. Even in Rails,
-Reducer's simpler, more functional API may be a better fit for your needs.
+as Platformatec's excellent [HasScope][has_scope]. But Rack::Reducer works in
+any Rack app, with any ORM, or without an ORM at all. Even in Rails, Reducer's
+simpler, more functional API may be a better fit for your needs.
 
 Install
 ------------------------------------------
@@ -374,8 +374,7 @@ Please include tests, following the style of the specs in `spec/*_spec.rb`.
 
 
 
-[1]: http://plataformatec.com.br/
-[2]: https://github.com/plataformatec/has_scope
+[has_scope]: https://github.com/plataformatec/has_scope
 [sinatra]: https://github.com/sinatra/sinatra
 [sequel]: https://github.com/jeremyevans/sequel
 [roda]: https://github.com/jeremyevans/roda
