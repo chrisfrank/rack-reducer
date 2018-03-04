@@ -55,7 +55,7 @@ filters or twenty. You can use it by extending it in your models, or by
 calling it as a function.
 
 ### Cleaned up by extending Rack::Reducer
-Call `Model.reduce(params)` in your controllers:
+Call `Model.reduce(params)` in your controllers...
 
 ```ruby
 # app/controllers/artists_controller.rb
@@ -65,7 +65,10 @@ class ArtistsController < ApplicatonController
     @artists.all.to_json
   end
 end
+```
 
+... and `extend Rack::Reducer` in your models:
+```ruby
 # app/models/artist.rb
 class Artist < ActiveRecord::Base
   extend Rack::Reducer # makes `self.reduce` available at class level
