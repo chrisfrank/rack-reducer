@@ -1,15 +1,15 @@
 Rack::Reducer
-=============
+==========================================
 Safely map URL params to database filters, in any Rack app. If your users need
 to filter data by making HTTP requests, this gem can help.
 
 If you're working in Rails, note that Rack::Reducer solves the same problem
 as [Platformatec][1]’s excellent [HasScope][2]. Unlike HasScope, Rack::Reducer
-works in any Rack app, with any ORM, or no ORM at all. Even in Rails, its
-simpler, more functional API may be a better fit for your needs.
+works in any Rack app, with any ORM, or without an ORM at all. Even in Rails,
+Reducer's simpler, more functional API may be a better fit for your needs.
 
 Install
--------
+------------------------------------------
 Add `rack-reducer` to your Gemfile:
 
 ```ruby
@@ -17,7 +17,7 @@ gem 'rack-reducer', require: 'rack/reducer'
 ```
 
 Use
----
+------------------------------------------
 Rack::Reducer maps incoming URL params to an array of filter functions you
 define, chains the applicable filters, and returns filtered data.
 
@@ -90,14 +90,10 @@ class App < Sinatra::Base
 
   # This example uses Sequel, so filters use Sequel query methods
   get '/artists' do
-    @artists = Rack::Reducer.call(
-      params,
-      dataset: DB[:artists],
-      filters: [
-        ->(name:) { grep(:name, "%#{name}%, case_insensitive: true) },
-        ->(genre:) { where(genre: genre) }
-      ]
-    )
+    @artists = Rack::Reducer.call(params, dataset: DB[:artists], filters: [
+      ->(name:) { grep(:name, "%#{name}%, case_insensitive: true) },
+      ->(genre:) { where(genre: genre) }
+    ])
     @artists.to_json
   end
 end

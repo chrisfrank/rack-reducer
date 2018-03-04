@@ -22,8 +22,4 @@ end
 
 describe SinatraMixin do
   it_behaves_like Rack::Reducer
-
-  context 'performance' do
-    it 'behaves comparably to hand-filtering params'
-  end
 end

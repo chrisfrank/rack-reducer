@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     rack-reducer (0.1.0)
-      rack
+      rack (>= 1.6, < 3)
 
 GEM
   remote: https://rubygems.org/
@@ -45,6 +45,7 @@ GEM
       minitest (~> 5.1)
       tzinfo (~> 1.1)
     arel (8.0.0)
+    benchmark-ips (2.7.2)
     builder (3.2.3)
     coderay (1.1.2)
     concurrent-ruby (1.0.5)
@@ -140,16 +141,17 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler
-  pry
+  benchmark-ips (~> 2)
+  bundler (~> 1)
+  pry (~> 0)
   rack-reducer!
-  rack-test
-  rails
-  rake
-  rspec
-  sequel
-  sinatra
-  sqlite3
+  rack-test (~> 0)
+  rails (~> 5)
+  rake (~> 12)
+  rspec (~> 3)
+  sequel (~> 5)
+  sinatra (~> 2)
+  sqlite3 (~> 1)
 
 BUNDLED WITH
    1.16.1
