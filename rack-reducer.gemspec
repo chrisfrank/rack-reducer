@@ -7,8 +7,8 @@ Gem::Specification.new do |spec|
   spec.description   = 'Safely map URL params to database filters, in any Rack app. If your users need to filter data by making HTTP requests, this gem can help.'
   spec.homepage      = 'https://github.com/chrisfrank/rack-reducer'
   spec.license       = 'MIT'
-  s.files            = Dir['README.md', 'lib/**/*']
-  s.test_files       = Dir['spec/**/*.rb']
+  spec.files         = Dir['README.md', 'lib/**/*']
+  spec.test_files    = Dir['spec/**/*.rb']
   spec.require_path  = 'lib'
 
   spec.add_development_dependency 'bundler', '~> 1'
