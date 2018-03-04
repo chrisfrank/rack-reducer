@@ -10,13 +10,14 @@ class SinatraMixin < Sinatra::Base
     reduces dataset, filters: [
       ->(genre:) { grep(:genre, "%#{genre}%", case_insensitive: true) },
       ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
+      ->(order:) { order(order.to_sym) }
     ]
 
   end
 
   get '/artists' do
     @artists = Artist.reduce(params)
-    @artists.to_json
+    @artists.all.to_json
   end
 end
 

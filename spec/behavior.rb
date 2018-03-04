@@ -34,4 +34,11 @@ shared_examples_for Rack::Reducer do
       expect(response.body).not_to include('Blake Mills')
     end
   end
+
+  it 'can sort as well as filter' do
+    get '/artists?order=genre' do |response|
+      genre = JSON.parse(response.body).dig(0, 'genre')
+      expect(genre).to eq('alt-soul')
+    end
+  end
 end

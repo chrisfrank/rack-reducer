@@ -13,8 +13,6 @@ class Artist < ApplicationRecord
     # or scopes...
     ->(name:) { by_name(name) },
     # or inline ActiveRecord queries
-    lambda { |released_before:|
-      where('last_release < ?', released_before)
-    },
+    ->(order:) { order(order.to_sym) }
   ]
 end

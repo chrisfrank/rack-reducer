@@ -12,8 +12,7 @@ module Rack
         end
 
         def satisfies?(requirements)
-          !requirements.empty? &&
-            slice(*requirements).keys.to_set == requirements
+          slice(*requirements).keys.to_set == requirements
         end
       end
 
