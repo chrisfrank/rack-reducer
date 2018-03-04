@@ -65,7 +65,7 @@ class ArtistsController < ApplicatonController
     @artists.all.to_json
   end
 end
-```
+
 # app/models/artist.rb
 class Artist < ActiveRecord::Base
   extend Rack::Reducer # makes `self.reduce` available at class level
