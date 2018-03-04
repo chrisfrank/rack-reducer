@@ -33,16 +33,16 @@ params are present, or return all artists otherwise.
 Even with just a few optional filters, running them conditonally via `if` 
 statements gets messy.
 
-### A mess
+### A Mess
 
 ```ruby
 # app/controllers/artists_controller.rb
 class ArtistsController < ApplicationController
   def index
     @artists = Artist.all
-    @artists = where('lower(name) like ?', "%#{name.downcase}%") if params[:name]
+    @artists = @artists.where('lower(name) like ?', "%#{name.downcase}%") if params[:name]
     @artists = @artists.where(genre: params[:genre]) if params[:genre]
-    @artists = @artists.order(params[:order]).to_sym if params[:order]
+    @artists = @artists.order(params[:order].to_sym) if params[:order]
     # ...
     # ...
     # pages later...
@@ -50,10 +50,11 @@ class ArtistsController < ApplicationController
   end
 ```
 
-Rack::Reducer lets you chain filters elegantly, whether you're chaining two 
-filters or twenty. You can use it in your choice of two styles.
+Rack::Reducer lets you chain filters elegantly, whether you're chaining two
+filters or twenty. You can use it by extending it in your models, or by
+calling it as a function.
 
-### Rack::Reducer, mixin-style
+### Cleaned up by extending Rack::Reducer
 Call `Model.reduce(params)` in your controllers:
 
 ```ruby
@@ -65,17 +66,15 @@ class ArtistsController < ApplicatonController
   end
 end
 ```
-
-In your models, extend Rack::Reducer to make `reduce` and `reduces` available at
-the class level. Use `reduce` in your controllers, as above. Use `reduces` in
-your models, to configure (1) the initial dataset your controller will  filter,
-and (2) the filter functions to conditionally apply.
-
-```ruby
 # app/models/artist.rb
 class Artist < ActiveRecord::Base
-  extend Rack::Reducer
-  # self.all is an ActiveRecord query, so filters use AR query methods
+  extend Rack::Reducer # makes `self.reduce` available at class level
+
+  # configure by calling
+  # `reduces(some_initial_scope, filters: [an, array, of, lambdas])`
+  #
+  # filters can use any methods your initial dataset understands.
+  # here it's an ActiveRecord query, so filters use AR query methods
   reduces self.all, filters: [
     ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
     ->(genre:) { where(genre: genre) },
@@ -84,10 +83,11 @@ class Artist < ActiveRecord::Base
 end
 ```
 
-### Rack::Reducer, functional style
-Alternatively, you can call Rack::Reducer as a function, which (a) helps keep
-your filtering logic in one file, and (b) lets you use it without polluting
-your model's methods.
+### Cleaned up by calling Rack::Reducer as a function
+If you prefer composition to inheritance, you can call Rack::Reducer as a
+function instead of extending it. The functional style can (a) help keep
+your filtering logic in one file, and (b) let you use Rack::Reducer without
+polluting your model's methods.
 
 ```ruby
 # app/controllers/artists_controller.rb
@@ -131,7 +131,7 @@ handle requests identically. In the examples above:
 Framework-specific Examples
 ---------------------------
 These examples apply Rack::Reducer in different frameworks, with a different
-ORM each time. The pairings of ORMs and frameworks are abitrary, just to 
+ORM each time. The pairings of ORMs and frameworks are abitrary, just to
 demonstrate a few possible stacks.
 
 - [Sinatra](#sinatrasequel)
@@ -139,8 +139,8 @@ demonstrate a few possible stacks.
 - [Rails](#railsadvanced)
 
 ### Sinatra/Sequel
-This example uses [Sinatra][sinatra] to handle requests, and [Sequel][sequel] as
-an ORM.
+This example uses [Sinatra][sinatra] to handle requests, and [Sequel][sequel]
+as an ORM.
 
 #### Mixin-style
 ```ruby
@@ -211,22 +211,24 @@ end
 run app
 ```
 
-When Rack::Reducer is mounted as middleware, it stores its filtered data in 
+When Rack::Reducer is mounted as middleware, it stores its filtered data in
 env['rack.reduction'], then calls the next app in the middleware stack. You can
 change the `env` key by passing a new name as option to `use`:
 
 ```ruby
 # config.ru
-use Rack::Reducer, dataset: ARTISTS, filters: [], key: 'myapp.custom_key'
+use Rack::Reducer, key: 'myapp.custom_key', dataset: ARTISTS, filters: [
+  #an array of lambdas
+],
 ```
 
 ### Rails/Advanced
 The examples in the [introduction](#use) cover basic Rails use. The examples
-below demonstrate more advanced use.
+below cover more advanced use.
 
 If you're comfortable in a non-Rails stack, you can apply these advanced
 techniques there too. I wholeheartedly endorse [Roda][roda], and use
-Rack::Reducer with Roda in production.
+Rack::Reducer with Roda/Sequel in production.
 
 #### Chaining reduce with other ActiveRecord query methods
 In the mixin-style, you can chain `Model.reduce` with other ActiveRecord
@@ -243,13 +245,13 @@ class Artist < ApplicationRecord
     ->(genre:) { where(genre: genre) },
     ->(order:) { order(order.to_sym) }
   ]
-  
+
   scope :by_name, lambda { |name|
     where('lower(name) like ?', "%#{name.downcase}%")
   }
-  
+
   # here's a scope we're not using in our Reducer filters,
-  # but will use in our controller anyway
+  # but will use in our controller
   scope :signed, lambda { where(signed: true) }
 end
 
