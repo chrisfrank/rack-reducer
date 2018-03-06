@@ -1,12 +1,14 @@
 Rack::Reducer
 ==========================================
-Safely map URL params to database filters, in any Rack app. If your users need
-to filter or sort data by making HTTP requests, this gem can help.
+Safely map URL params to functions that filter data, in any Rack app.
 
-If you're working in Rails, note that Rack::Reducer solves the same problem
-as Platformatec's excellent [HasScope][has_scope]. But Rack::Reducer works in
-any Rack app, with any ORM, or without an ORM at all. Even in Rails, Reducer's
-simpler, more functional API may be a better fit for your needs.
+Rack::Reducer handles param sanitizing, filter chaining, and conditional
+filtering on your behalf. It can make your controller logic as simple as 
+`@artists = Artist.reduce(params)`.
+
+Your filter functions can ultimately be Rails scopes, inline lambdas, or methods
+on a [query object][query_obj] — Rack::Reducer doesn’t care. It works in any 
+Rack-compatible app, with any ORM, and has no dependencies beyond Rack itself.
 
 Install
 ------------------------------------------
@@ -50,9 +52,7 @@ class ArtistsController < ApplicationController
   end
 ```
 
-Rack::Reducer lets you chain filters elegantly, whether you're chaining two
-filters or twenty. You can use it by extending it in your models, or by
-calling it as a function.
+Rack::Reducer helps you clean this mess up, in your choice of two styles.
 
 ### Cleaned up by extending Rack::Reducer
 Call `Model.reduce(params)` in your controllers...
@@ -68,16 +68,17 @@ end
 ```
 
 ... and `extend Rack::Reducer` in your models:
+
 ```ruby
 # app/models/artist.rb
 class Artist < ActiveRecord::Base
   extend Rack::Reducer # makes `self.reduce` available at class level
 
-  # configure by calling
+  # Configure by calling
   # `reduces(some_initial_scope, filters: [an, array, of, lambdas])`
   #
-  # filters can use any methods your initial dataset understands.
-  # here it's an ActiveRecord query, so filters use AR query methods
+  # Filters can use any methods your initial dataset understands.
+  # Here it's an ActiveRecord query, so filters use AR query methods.
   reduces self.all, filters: [
     ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
     ->(genre:) { where(genre: genre) },
@@ -88,9 +89,9 @@ end
 
 ### Cleaned up by calling Rack::Reducer as a function
 If you prefer composition to inheritance, you can call Rack::Reducer as a
-function instead of extending it. The functional style can (a) help keep
-your filtering logic in one file, and (b) let you use Rack::Reducer without
-polluting your model's methods.
+function instead of extending it. The functional style can help keep your 
+filtering logic in one file, and let you use Rack::Reducer without polluting
+your model's methods.
 
 ```ruby
 # app/controllers/artists_controller.rb
@@ -137,8 +138,8 @@ These examples apply Rack::Reducer in different frameworks, with a different
 ORM each time. The pairings of ORMs and frameworks are abitrary, just to
 demonstrate a few possible stacks.
 
-- [Sinatra](#sinatrasequel)
-- [Rack Middleware](#rack-middlewarehash)
+- [Sinatra/Sequel](#sinatrasequel)
+- [Rack Middleware/Ruby Hash](#rack-middlewarehash)
 - [Rails](#railsadvanced)
 
 ### Sinatra/Sequel
@@ -185,7 +186,7 @@ end
 
 ### Rack Middleware/Hash
 This example runs a raw Rack app with Rack::Reducer mounted as middleware.
-It doesn't use an ORM at all -- it just stores data in a hash.
+It doesn't use an ORM at all -- it just stores data in a ruby hash.
 
 ```ruby
 # config.ru
@@ -338,7 +339,7 @@ Mongoid, etc -- it just `instance_exec`s your own code against your own dataset.
 Rack::Reducer claims to "safely" map URL params to filters, but it accepts an
 unfiltered params hash. What gives?
 
-By using keyword arguments in your filter lambdas, you are *explicitly* naming
+By using keyword arguments in your filter lambdas, you are explicitly naming
 the params you'll accept into your filters. Params that aren't keywords never 
 get evaluated.
 
@@ -362,7 +363,17 @@ According to `spec/benchmarks.rb`, Rack::Reducer executes about 90% as quickly
 as a set of hard-coded conditional filters. It is extremly unlikely to be a
 bottleneck in your application.
 
+### Alternatives
+If you're working in Rails, Platformatec's excellent [HasScope][has_scope] has
+been solving this problem since 2013. I prefer keeping my query logic all in one
+place, though, instead of spreading it across my controllers and models.
 
+[Periscope][periscope], by laserlemon, seems like another good Rails option, and
+though it's Rails only, it supports more than just ActiveRecord. I have not used
+periscope in production.
+
+For Sinatra, Simon Courtois has a [Sinatra port of has_scope][sin_has_scope].
+It depends on ActiveRecord.
 
 Contributing
 -------------------------------
@@ -375,8 +386,11 @@ Please include tests, following the style of the specs in `spec/*_spec.rb`.
 
 
 [has_scope]: https://github.com/plataformatec/has_scope
+[sin_has_scope]: https://github.com/simonc/sinatra-has_scope
 [sinatra]: https://github.com/sinatra/sinatra
 [sequel]: https://github.com/jeremyevans/sequel
 [roda]: https://github.com/jeremyevans/roda
 [reduce]: http://ruby-doc.org/core-2.5.0/Enumerable.html#method-i-reduce
 [keywords]: https://robots.thoughtbot.com/ruby-2-keyword-arguments
+[query_obj]: https://medium.flatstack.com/query-object-in-ruby-on-rails-56ea434365f0
+[periscope]: https://github.com/laserlemon/periscope
