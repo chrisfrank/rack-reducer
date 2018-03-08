@@ -59,7 +59,7 @@ Call `Model.reduce(params)` in your controllers...
 
 ```ruby
 # app/controllers/artists_controller.rb
-class ArtistsController < ApplicatonController
+class ArtistsController < ApplicationController
   def index
     @artists = Artist.reduce(params)
     @artists.all.to_json
@@ -135,7 +135,7 @@ handle requests identically. In the examples above:
 Framework-specific Examples
 ---------------------------
 These examples apply Rack::Reducer in different frameworks, with a different
-ORM each time. The pairings of ORMs and frameworks are abitrary, just to
+ORM each time. The pairings of ORMs and frameworks are arbitrary, just to
 demonstrate a few possible stacks.
 
 - [Sinatra/Sequel](#sinatrasequel)
