@@ -25,7 +25,7 @@ describe SinatraFunctional do
 
   it 'applies a default order' do
     get '/artists' do |response|
-      genre = JSON.parse(response.body).dig(0, 'genre')
+      genre = JSON.parse(response.body)[0]['genre']
       expect(genre).to eq('alt-soul')
     end
   end
