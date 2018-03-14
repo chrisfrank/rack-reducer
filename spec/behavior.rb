@@ -37,7 +37,7 @@ shared_examples_for Rack::Reducer do
 
   it 'can sort as well as filter' do
     get '/artists?order=genre' do |response|
-      genre = JSON.parse(response.body).dig(0, 'genre')
+      genre = JSON.parse(response.body)[0]['genre']
       expect(genre).to eq('alt-soul')
     end
   end
