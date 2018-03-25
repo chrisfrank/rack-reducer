@@ -13,20 +13,12 @@ module Rack
       DEFAULTS = {
         dataset: [],
         filters: [],
-        key: 'rack.reduction',
         params: nil
       }.freeze
 
-      def initialize(app, props)
-        @app = app
-        @props = DEFAULTS.merge(props)
-      end
-
-      # when mounted as middleware, set env[@props[:key]] to the output
-      # of self.reduce, then call the next app in the middleware stack
-      def call(env)
-        @params = Rack::Request.new(env).params.symbolize_keys
-        @app.call env.merge(@props[:key] => reduce)
+      def initialize(options)
+        @props = DEFAULTS.merge(options)
+        @params = Parser.call(@props[:params]).symbolize_keys
       end
 
       def reduce
@@ -35,14 +27,10 @@ module Rack
 
       private
 
-      def params
-        @params ||= Parser.call(@props[:params]).symbolize_keys
-      end
-
       def apply_filter(data, fn)
         requirements = fn.required_argument_names.to_set
-        return data unless params.satisfies?(requirements)
-        data.instance_exec(params.slice(*fn.all_argument_names), &fn)
+        return data unless @params.satisfies?(requirements)
+        data.instance_exec(@params.slice(*fn.all_argument_names), &fn)
       end
     end
   end

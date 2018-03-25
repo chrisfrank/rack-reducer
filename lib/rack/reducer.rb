@@ -2,25 +2,26 @@
 
 require 'rack/request'
 require_relative 'reducer/reduction'
+require_relative 'reducer/middleware'
 
 module Rack
-  # use request params to apply filters to a dataset
+  # Use request params to apply filters to a dataset
   module Reducer
-    # call Rack::Reducer as a function, instead of mounting it as middleware
+    # Call Rack::Reducer as a function
     def self.call(params, dataset:, filters:)
       Reduction.new(
-        nil, # first arg to Reduction is `app`, which is for middleware only
         params: params,
         filters: filters,
-        dataset: dataset,
+        dataset: dataset
       ).reduce
     end
 
+    # Mount Rack::Reducer as middleware
     def self.new(app, options = {})
-      Reduction.new(app, options)
+      Middleware.new(app, options)
     end
 
-    # extend Rack::Reducer to get `reduce` and `reduces` as class-methods
+    # Extend Rack::Reducer to get `reduce` and `reduces` as class-methods
     #
     # class Artist < SomeORM::Model
     #   extend Rack::Reducer
@@ -31,7 +32,6 @@ module Rack
     # end
     def reduce(params)
       Reduction.new(
-        nil,
         params: params,
         filters: @rack_reducer_filters,
         dataset: @rack_reducer_dataset

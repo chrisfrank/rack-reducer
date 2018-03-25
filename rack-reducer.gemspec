@@ -1,10 +1,10 @@
 Gem::Specification.new do |spec|
   spec.name          = 'rack-reducer'
-  spec.version       = '0.1.0'
+  spec.version       = '0.1.1'
   spec.authors       = ['Chris Frank']
   spec.email         = ['chris.frank@thefutureproject.org']
-  spec.summary       = 'Safely map URL params to database filters, in any Rack app.'
-  spec.description   = 'Safely map URL params to database filters, in any Rack app. If your users need to filter data by making HTTP requests, this gem can help.'
+  spec.summary       = 'Dynamically filter data via URL params, in any Rack app.'
+  spec.description   = 'Dynamically filter, sort, and paginate data via URL params, in any Rack app.'
   spec.homepage      = 'https://github.com/chrisfrank/rack-reducer'
   spec.license       = 'MIT'
   spec.files         = Dir['README.md', 'lib/**/*']
