@@ -1,5 +1,4 @@
 require 'spec_helper'
-require_relative 'fixtures'
 require 'sinatra/base'
 require 'json'
 
@@ -9,12 +8,7 @@ class SinatraFunctional < Sinatra::Base
   end
 
   get '/artists' do
-    @artists = Rack::Reducer.call(params, dataset: Artist, filters: [
-      ->(genre:) { grep(:genre, "%#{genre}%", case_insensitive: true) },
-      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(order: 'genre') { order(order.to_sym) }
-    ])
-
+    @artists = Rack::Reducer.call(params, SEQUEL_REDUCER)
     @artists.all.to_json
   end
 end

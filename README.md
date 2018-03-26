@@ -230,7 +230,31 @@ use Rack::Reducer, key: 'myapp.custom_key', dataset: ARTISTS, filters: [
 ```
 
 ### Hanami
-TODO
+
+```ruby
+# apps/web/controllers/artists/index.rb
+module Web::Controllers::Artists
+  class Index
+    include Web::Action
+
+    def call(params)
+      @artists = ArtistRepository.new.reduce(params)
+      self.body = @artists.all.to_json
+    end
+  end
+end
+
+# lib/app_name/repositories/artist_repository.rb
+class ArtistRepository < Hanami::Repository
+  def reduce(params)
+    Rack::Reducer.call(params, dataset: artists.dataset, filters: [
+      ->(genre:) { where(genre: genre) },
+      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
+      ->(order:) { order(order.to_sym) },
+    ])
+  end
+end
+```
 
 ### Advanced use in Rails
 The examples in the [introduction](#use) cover basic Rails use. The examples

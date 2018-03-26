@@ -1,12 +1,11 @@
 require 'spec_helper'
-require_relative 'fixtures'
 require 'json'
 
 # mount Rack::Reducer as middleware, let it filter data into env['rack.reduction'],
 # and respond with env['rack.reduction'].to_json
 module MiddlewareTest
   DEFAULTS = {
-    dataset: ARTISTS,
+    dataset: DB[:artists].all,
     filters: [
       ->(genre:) { select { |item| item[:genre].match(/#{genre}/i) } },
       ->(name:) { select { |item| item[:name].match(/#{name}/i) } },

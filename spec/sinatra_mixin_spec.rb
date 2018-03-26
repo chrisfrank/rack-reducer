@@ -1,5 +1,4 @@
 require 'spec_helper'
-require_relative 'fixtures'
 require 'sinatra/base'
 require 'json'
 
@@ -12,7 +11,6 @@ class SinatraMixin < Sinatra::Base
       ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
       ->(order:) { order(order.to_sym) }
     ]
-
   end
 
   get '/artists' do

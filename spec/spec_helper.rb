@@ -3,8 +3,19 @@ Bundler.setup
 require 'pry'
 require 'rack/test'
 require 'rack/reducer'
-require_relative 'fixtures'
+require 'sequel'
 require_relative 'behavior'
+ENV['RACK_ENV'] = ENV['RAILS_ENV'] = 'test'
+DB = Sequel.connect "sqlite://#{__dir__}/fixtures.sqlite"
+
+SEQUEL_REDUCER = {
+  dataset: DB[:artists],
+  filters: [
+    ->(genre:) { grep(:genre, "%#{genre}%", case_insensitive: true) },
+    ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
+    ->(order: 'genre') { order(order.to_sym) }
+  ]
+}.freeze
 
 RSpec.configure do |config|
   config.color = true

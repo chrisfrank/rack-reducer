@@ -3,7 +3,7 @@ shared_examples_for Rack::Reducer do
 
   it 'responds with unfiltered data when filter params are empty' do
     get('/artists') do |res|
-      ARTISTS.each { |artist| expect(res.body).to include(artist[:name]) }
+      DB[:artists].each { |artist| expect(res.body).to include(artist[:name]) }
     end
   end
 
