@@ -8,7 +8,7 @@ require_relative 'behavior'
 ENV['RACK_ENV'] = ENV['RAILS_ENV'] = 'test'
 DB = Sequel.connect "sqlite://#{__dir__}/fixtures.sqlite"
 
-SEQUEL_REDUCER = {
+SEQUEL_QUERY = {
   dataset: DB[:artists],
   filters: [
     ->(genre:) { grep(:genre, "%#{genre}%", case_insensitive: true) },

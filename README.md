@@ -65,7 +65,7 @@ Call `Model.reduce(params)` in your controllers...
 class ArtistsController < ApplicationController
   def index
     @artists = Artist.reduce(params)
-    @artists.all.to_json
+    render json: @artists
   end
 end
 ```
@@ -96,20 +96,26 @@ Call Rack::Reducer as a function:
 ```ruby
 # app/controllers/artists_controller.rb
 class ArtistsController < ApplicationController
-  def index
-    @artists = Rack::Reducer.call(params, dataset: Artist.all, filters: [
+  # this is an options hash that we'll pass to Rack::Reducer
+  QUERY = {
+    dataset: Artist.all,
+    filters: [
       ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
       ->(genre:) { where(genre: genre) },
       ->(order:) { order(order.to_sym) },
-    ])
-    @artists.all.to_json
+    ]
+  }
+
+  def index
+    @artists = Rack::Reducer.call(params, QUERY)
+    render json: @artists
   end
 end
 ```
 
 The mixin style requires less boilerplate, and is stylistically Railsier.
-The functional style is more flexible, and keeps your filtering logic in one
-place. Both styles are supported, tested, and handle requests identically.
+The functional style is more flexible, and keeps your filtering logic all in
+one place. Both styles are supported, tested, and handle requests identically.
 
 In the examples above:
 
@@ -143,7 +149,7 @@ demonstrate a few possible stacks.
 - [Sinatra/Sequel](#sinatrasequel)
 - [Rack Middleware/Ruby Hash](#rack-middlewarehash)
 - [Hanami](#hanami)
-- [Advanced use in Rails](#advanced-use-in-rails)
+- [Advanced use in Rails and other frameworks](#advanced-use-in-rails-and-other-frameworks)
 
 ### Sinatra/Sequel
 This example uses [Sinatra][sinatra] to handle requests, and [Sequel][sequel]
@@ -155,13 +161,18 @@ as an ORM.
 class SinatraFunctionalApp < Sinatra::Base
   DB = Sequel.connect ENV['DATABASE_URL']
 
-  get '/artists' do
-    # dataset is a Sequel::Dataset, so filters use Sequel query methods
-    @artists = Rack::Reducer.call(params, dataset: DB[:artists], filters: [
+  # dataset is a Sequel::Dataset, so filters use Sequel query methods
+  QUERY = {
+    dataset: DB[:artists],
+    filters: [
       ->(genre:) { where(genre: genre) },
       ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
       ->(order:) { order(order.to_sym) },
-    ])
+    ]
+  }
+
+  get '/artists' do
+    @artists = Rack::Reducer.call(params, QUERY).to_a
     @artists.all.to_json
   end
 end
@@ -288,13 +299,10 @@ class ArtistsController < ApplicationController
 end
 ```
 
-#### Delegating to query objects
-TODO
-
 #### Dynamically setting Reducer's initial dataset
-Rack::Reducer's mixin style only lets you target one dataset for reduction.
-If you need different initial data in different contexts, and don't want to
-determine that data via filters, you can use the functional style:
+Rack::Reducer's mixin style only lets you target one initial dataset for
+reduction. If you need different initial datasets in different contexts, use
+the functional style:
 
 ```ruby
 # app/controllers/artists_controller.rb

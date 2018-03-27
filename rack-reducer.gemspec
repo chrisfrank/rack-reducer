@@ -19,6 +19,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rack-test', '~> 0'
   spec.add_development_dependency 'rails', '~> 5'
   spec.add_development_dependency 'rake', '~> 12'
+  spec.add_development_dependency 'roda', '~> 3'
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'sequel', '~> 4'
   spec.add_development_dependency 'sinatra', '~> 2'
