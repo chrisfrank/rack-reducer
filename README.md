@@ -50,7 +50,7 @@ class ArtistsController < ApplicationController
     @artists = @artists.order(params[:order].to_sym) if params[:order]
     # ...
     # pages later...
-    @artists.all.to_json
+    render json: @artists
   end
 ```
 
@@ -75,13 +75,13 @@ end
 ```ruby
 # app/models/artist.rb
 class Artist < ActiveRecord::Base
-  extend Rack::Reducer # makes `self.reduce` available at class level
+  extend Rack::Reducer
 
   # Configure by calling
   # `reduces(some_initial_scope, filters: [an, array, of, lambdas])`
   #
-  # Filters can use any methods your initial dataset understands.
-  # Here it's an ActiveRecord query, so filters use AR query methods.
+  # Filters can use any methods your initial dataset understands,
+  # in this case Artist class methods and scopes
   reduces self.all, filters: [
     ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
     ->(genre:) { where(genre: genre) },
@@ -91,12 +91,13 @@ end
 ```
 
 ### Cleaned up, functional-style
-Call Rack::Reducer as a function:
+Leave your models alone and call Rack::Reducer as a function in your
+controllers:
 
 ```ruby
 # app/controllers/artists_controller.rb
 class ArtistsController < ApplicationController
-  # this is an options hash that we'll pass to Rack::Reducer
+  # QUERY is an options hash we'll pass to Rack::Reducer.call
   QUERY = {
     dataset: Artist.all,
     filters: [
@@ -142,13 +143,14 @@ In the examples above:
 
 Framework-specific Examples
 ---------------------------
-These examples apply Rack::Reducer in different frameworks, with a different
-ORM each time. The pairings of ORMs and frameworks are arbitrary, just to
-demonstrate a few possible stacks.
+These examples apply Rack::Reducer in different frameworks and ORMs. The
+pairings of ORMs and frameworks are arbitrary, just to demonstrate a few
+possible stacks.
 
 - [Sinatra/Sequel](#sinatrasequel)
 - [Rack Middleware/Ruby Hash](#rack-middlewarehash)
 - [Hanami](#hanami)
+- [Roda](#roda)
 - [Advanced use in Rails and other frameworks](#advanced-use-in-rails-and-other-frameworks)
 
 ### Sinatra/Sequel
@@ -173,7 +175,7 @@ class SinatraFunctionalApp < Sinatra::Base
 
   get '/artists' do
     @artists = Rack::Reducer.call(params, QUERY).to_a
-    @artists.all.to_json
+    @artists.to_json
   end
 end
 ```
@@ -193,7 +195,7 @@ class SinatraMixinApp < Sinatra::Base
 
   get '/artists' do
     @artists = Artist.reduce(params)
-    @artists.all.to_json
+    @artists.to_a.to_json
   end
 end
 ```
@@ -250,7 +252,7 @@ module Web::Controllers::Artists
 
     def call(params)
       @artists = ArtistRepository.new.reduce(params)
-      self.body = @artists.all.to_json
+      self.body = @artists.to_a.to_json
     end
   end
 end
@@ -267,13 +269,41 @@ class ArtistRepository < Hanami::Repository
 end
 ```
 
-### Advanced use in Rails
+### Roda
+[Roda][roda], by Jeremy Evans, is my favorite way to build APIs in ruby.
+
+```ruby
+# app.rb
+require 'roda'
+require 'sequel'
+
+class App < Roda
+  plugin :json
+
+  DB = Sequel.connect ENV['DATABASE_URL']
+
+  # dataset is a Sequel::Dataset, so filters use Sequel query methods
+  QUERY = {
+    dataset: DB[:artists],
+    filters: [
+      ->(genre:) { where(genre: genre) },
+      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
+      ->(order:) { order(order.to_sym) },
+    ]
+  }
+
+  route do |r|
+    r.get('artists') { Rack::Reducer.call(r.params, QUERY).to_a }
+  end
+end
+```
+
+### Advanced use in Rails and other frameworks
 The examples in the [introduction](#use) cover basic Rails use. The examples
 below cover more advanced use.
 
 If you're comfortable in a non-Rails stack, you can apply these advanced
-techniques there too. I wholeheartedly endorse [Roda][roda], and use
-Rack::Reducer with Roda/Sequel in production.
+techniques there too.
 
 #### Default filters
 Most of the time it makes sense to use *required* keyword arguments for each
@@ -294,7 +324,7 @@ class ArtistsController < ApplicationController
       ->(genre:) { where(genre: genre) },
       ->(order: 'name') { order(order.to_sym) }
     ])
-    @artists.to_json
+    render json: @artists
   end
 end
 ```
@@ -314,7 +344,7 @@ class ArtistsController < ApplicationController
       ->(genre:) { where(genre: genre) },
       ->(order:) { order(order.to_sym) }
     ])
-    @artists.to_json
+    render json: @artists
   end
 end
 ```
@@ -350,7 +380,7 @@ class ArtistsController < ApplicationController
     # you can chain reduce with other ActiveRecord queries,
     # as long as reduce is first in the chain
     @artists = Artist.reduce(params).signed
-    @artists.to_json
+    render json: @artists
   end
 end
 ```
