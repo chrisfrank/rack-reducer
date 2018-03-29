@@ -47,7 +47,7 @@ class ArtistsController < ApplicationController
     @artists = Artist.all
     @artists = @artists.where('lower(name) like ?', "%#{name.downcase}%") if params[:name]
     @artists = @artists.where(genre: params[:genre]) if params[:genre]
-    @artists = @artists.order(params[:order].to_sym) if params[:order]
+    @artists = @artists.order(params[:sort].to_sym) if params[:sort]
     # ...
     # pages later...
     render json: @artists
@@ -85,7 +85,7 @@ class Artist < ActiveRecord::Base
   reduces self.all, filters: [
     ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
     ->(genre:) { where(genre: genre) },
-    ->(order:) { order(order.to_sym) },
+    ->(sort:) { order(sort.to_sym) },
   ]
 end
 ```
@@ -103,7 +103,7 @@ class ArtistsController < ApplicationController
     filters: [
       ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
       ->(genre:) { where(genre: genre) },
-      ->(order:) { order(order.to_sym) },
+      ->(sort:) { order(sort.to_sym) },
     ]
   }
 
@@ -169,7 +169,7 @@ class SinatraFunctionalApp < Sinatra::Base
     filters: [
       ->(genre:) { where(genre: genre) },
       ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(order:) { order(order.to_sym) },
+      ->(sort:) { order(sort.to_sym) },
     ]
   }
 
@@ -189,7 +189,7 @@ class SinatraMixinApp < Sinatra::Base
     reduces self.dataset, filters: [
       ->(genre:) { where(genre: genre) },
       ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(order:) { order(order.to_sym) },
+      ->(sort:) { order(sort.to_sym) },
     ]
   end
 
@@ -223,7 +223,7 @@ app = Rack::Builder.new do
   use Rack::Reducer, dataset: ARTISTS, filters: [
     ->(genre:) { select { |item| item[:genre].match(/#{genre}/i) } },
     ->(name:) { select { |item| item[:name].match(/#{name}/i) } },
-    ->(order:) { sort_by { |item| item[order.to_sym] } },
+    ->(sort:) { sort_by { |item| item[sort.to_sym] } },
   ]
   run ->(env) { [200, {}, [env['rack.reduction'].to_json]] }
 end
@@ -263,7 +263,7 @@ class ArtistRepository < Hanami::Repository
     Rack::Reducer.call(params, dataset: artists.dataset, filters: [
       ->(genre:) { where(genre: genre) },
       ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(order:) { order(order.to_sym) },
+      ->(sort:) { order(sort.to_sym) },
     ])
   end
 end
@@ -288,7 +288,7 @@ class App < Roda
     filters: [
       ->(genre:) { where(genre: genre) },
       ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(order:) { order(order.to_sym) },
+      ->(sort:) { order(sort.to_sym) },
     ]
   }
 
@@ -313,7 +313,7 @@ present.
 But you may want to run a filter always, with a sensible default when the params
 don't specify a value. Ordering results is a common case.
 
-The code below will order by `params[:order]` when it exists, and by name
+The code below will order by `params[:sort]` when it exists, and by name
 otherwise.
 
 ```ruby
@@ -322,7 +322,7 @@ class ArtistsController < ApplicationController
   def index
     @artists = Rack::Reducer.call(params, dataset: Artist.all, filters: [
       ->(genre:) { where(genre: genre) },
-      ->(order: 'name') { order(order.to_sym) }
+      ->(sort: 'name') { order(sort.to_sym) }
     ])
     render json: @artists
   end
@@ -342,7 +342,7 @@ class ArtistsController < ApplicationController
     @artists = Rack::Reducer.call(params, dataset: @scope, filters: [
       ->(name:) { by_name(name) },
       ->(genre:) { where(genre: genre) },
-      ->(order:) { order(order.to_sym) }
+      ->(sort:) { order(sort.to_sym) }
     ])
     render json: @artists
   end
@@ -362,7 +362,7 @@ class Artist < ApplicationRecord
     # in this case `self.all`, so filters can use query methods, scopes, etc
     ->(name:) { by_name(name) },
     ->(genre:) { where(genre: genre) },
-    ->(order:) { order(order.to_sym) }
+    ->(sort:) { order(sort.to_sym) }
   ]
 
   scope :by_name, lambda { |name|
