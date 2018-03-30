@@ -3,8 +3,8 @@ Rack::Reducer
 [![Build Status](https://travis-ci.org/chrisfrank/rack-reducer.svg?branch=master)](https://travis-ci.org/chrisfrank/rack-reducer)
 [![Maintainability](https://api.codeclimate.com/v1/badges/675e7a654c7e11c24b9f/maintainability)](https://codeclimate.com/github/chrisfrank/rack-reducer/maintainability)
 
-Dynamically filter, sort, and paginate data via URL params, with controller
-logic as simple as
+Dynamically filter and sort data via URL params, with controller logic as
+succint as
 
 ```ruby
 @artists = Artist.reduce(params)
@@ -23,41 +23,25 @@ gem 'rack-reducer', require: 'rack/reducer'
 
 Use
 ------------------------------------------
-Rack::Reducer safely maps incoming URL params to an array of filter functions
-you define, chains the applicable filters, and returns filtered data.
+If your app needs to render a list of database records, you probably want those
+records to be filterable via URL params, like so:
 
-Suppose you have some incoming requests like these...
-
-`GET /artists`  
-`GET /artists?name=janelle+monae`  
-`GET /artists?name=blake&genre=electronic`
-
-You want to filter your `artists` table by name and/or genre when those
-params are present, or return all artists otherwise.
-
-Even with just a few optional filters, running them conditonally via `if`
-statements gets messy.
-
-### A Mess
-
-```ruby
-# app/controllers/artists_controller.rb
-class ArtistsController < ApplicationController
-  def index
-    @artists = Artist.all
-    @artists = @artists.where('lower(name) like ?', "%#{name.downcase}%") if params[:name]
-    @artists = @artists.where(genre: params[:genre]) if params[:genre]
-    @artists = @artists.order(params[:sort].to_sym) if params[:sort]
-    # ...
-    # pages later...
-    render json: @artists
-  end
+```
+GET /artists?name=blake` => artists named 'blake'
+GET /artists?genre=electronic&sort=name => electronic artists, sorted by name
+GET /artists => all artists
 ```
 
-Rack::Reducer helps you clean this mess up, in your choice of two styles: mixin
-or functional.
+You _could_ conditionally apply filters with hand-written `if` statements, but
+that approach gets uglier the more filters you have.
 
-### Cleaned up, mixin-style
+Rack::Reducer can help. It maps incoming URL params to an array of filter
+functions you define, applies only the applicable filters, and returns your
+filtered data.
+
+You can use Rack::Reducer in your choice of two styles: mixin or functional.
+
+### Mixin style
 Call `Model.reduce(params)` in your controllers...
 
 ```ruby
@@ -70,7 +54,7 @@ class ArtistsController < ApplicationController
 end
 ```
 
-... and `extend Rack::Reducer` in your models:
+...and `extend Rack::Reducer` in your models:
 
 ```ruby
 # app/models/artist.rb
@@ -90,33 +74,26 @@ class Artist < ActiveRecord::Base
 end
 ```
 
-### Cleaned up, functional-style
-Leave your models alone and call Rack::Reducer as a function in your
-controllers:
+### Functional style
+Call Rack::Reducer as a function, maybe right in your controllers, maybe in
+a dedicated [query object][query_obj], or really anywhere you like:
 
 ```ruby
 # app/controllers/artists_controller.rb
 class ArtistsController < ApplicationController
-  # QUERY is an options hash we'll pass to Rack::Reducer.call
-  QUERY = {
-    dataset: Artist.all,
-    filters: [
+  def index
+    @artists = Rack::Reducer.call(params, dataset: Artist.all, filters: [
       ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
       ->(genre:) { where(genre: genre) },
       ->(sort:) { order(sort.to_sym) },
-    ]
-  }
-
-  def index
-    @artists = Rack::Reducer.call(params, QUERY)
+    ])
     render json: @artists
   end
 end
 ```
 
-The mixin style requires less boilerplate, and is stylistically Railsier.
-The functional style is more flexible, and keeps your filtering logic all in
-one place. Both styles are supported, tested, and handle requests identically.
+The mixin style is stylistically Railsier. The functional style is more
+flexible. Both styles are supported, tested, and handle requests identically.
 
 In the examples above:
 
@@ -149,8 +126,8 @@ possible stacks.
 
 - [Sinatra/Sequel](#sinatrasequel)
 - [Rack Middleware/Ruby Hash](#rack-middlewarehash)
-- [Hanami](#hanami)
 - [Roda](#roda)
+- [Hanami](#hanami)
 - [Advanced use in Rails and other frameworks](#advanced-use-in-rails-and-other-frameworks)
 
 ### Sinatra/Sequel
@@ -242,7 +219,40 @@ use Rack::Reducer, key: 'myapp.custom_key', dataset: ARTISTS, filters: [
 ]
 ```
 
+### Roda
+This example uses [Roda][roda] to handle requests, and [Sequel][sequel] as an
+ORM.
+
+```ruby
+# app.rb
+require 'roda'
+require 'sequel'
+
+class App < Roda
+  plugin :json
+
+  DB = Sequel.connect ENV['DATABASE_URL']
+
+  QUERY = {
+    dataset: DB[:artists],
+    filters: [
+      ->(genre:) { where(genre: genre) },
+      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
+      ->(sort:) { order(sort.to_sym) },
+    ]
+  }
+  # Note that QUERY[:dataset] is a Sequel::Dataset, so the functions 
+  # in QUERY[:filters] use Sequel methods
+
+  route do |r|
+    r.get('artists') { Rack::Reducer.call(r.params, QUERY).to_a }
+  end
+end
+```
+
 ### Hanami
+This example uses [Hanami][hanami] to handle requests, and hanami-model as an
+ORM.
 
 ```ruby
 # apps/web/controllers/artists/index.rb
@@ -265,35 +275,6 @@ class ArtistRepository < Hanami::Repository
       ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
       ->(sort:) { order(sort.to_sym) },
     ])
-  end
-end
-```
-
-### Roda
-[Roda][roda], by Jeremy Evans, is my favorite way to build APIs in ruby.
-
-```ruby
-# app.rb
-require 'roda'
-require 'sequel'
-
-class App < Roda
-  plugin :json
-
-  DB = Sequel.connect ENV['DATABASE_URL']
-
-  # dataset is a Sequel::Dataset, so filters use Sequel query methods
-  QUERY = {
-    dataset: DB[:artists],
-    filters: [
-      ->(genre:) { where(genre: genre) },
-      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(sort:) { order(sort.to_sym) },
-    ]
-  }
-
-  route do |r|
-    r.get('artists') { Rack::Reducer.call(r.params, QUERY).to_a }
   end
 end
 ```
@@ -389,8 +370,8 @@ How Rack::Reducer Works
 --------------------------------------
 Rack::Reducer takes a dataset, a params hash, and an array of lambda functions.
 
-To return filtered data, it calls [reduce][reduce] on your array of lambdas,
-with the reduction's initial value set to `dataset`.
+To return filtered data, it calls Enumerable#[reduce][reduce] on your array of
+lambdas, with the reduction's initial value set to `dataset`.
 
 Each reduction looks for keys in the `params` hash that match the
 current lambda's [keyword arguments][keywords]. If the keys exist, it
@@ -402,7 +383,8 @@ execute at all, and just pass the unaltered dataset down the chain.
 
 The reason Reducer works with any ORM is that *you* supply the dataset and
 filter functions. Reducer doesn't need to know anything about ActiveRecord,
-Mongoid, etc -- it just `instance_exec`s your own code against your own dataset.
+Sequel, Mongoid, etc -- it just `instance_exec`s your own code against your
+own dataset.
 
 ### Security
 Rack::Reducer claims to "safely" map URL params to filters, but it accepts an
@@ -412,7 +394,7 @@ By using keyword arguments in your filter lambdas, you are explicitly naming
 the params you'll accept into your filters. Params that aren't keywords never 
 get evaluated.
 
-For extra safety, you can typecast the params in your filters. Most ORMs
+For extra safety, you can typecast the params in your filters. Many ORMs
 handle this for you, but as an example:
 
 ```ruby
@@ -435,7 +417,7 @@ bottleneck in your application.
 Alternatives
 -------------------
 If you're working in Rails, Platformatec's excellent [HasScope][has_scope] has
-been solving this problem since 2013. I prefer keeping my query logic all in one
+been solving this problem since 2009. I prefer keeping my query logic all in one
 place, though, instead of spreading it across my controllers and models.
 
 [Periscope][periscope], by laserlemon, seems like another good Rails option, and
@@ -476,3 +458,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 [keywords]: https://robots.thoughtbot.com/ruby-2-keyword-arguments
 [query_obj]: https://robots.thoughtbot.com/using-yieldself-for-composable-activerecord-relations
 [periscope]: https://github.com/laserlemon/periscope
+[hanami]: http://hanamirb.org
