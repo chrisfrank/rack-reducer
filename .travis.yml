@@ -4,3 +4,5 @@ rvm:
   - 2.4
   - 2.5
 script: bin/rake
+before_install:
+  - gem install bundler
