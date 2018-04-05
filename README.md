@@ -416,7 +416,7 @@ bottleneck in your application.
 
 Alternatives
 -------------------
-If you're working in Rails, Platformatec's excellent [HasScope][has_scope] has
+If you're working in Rails, Plataformatec's excellent [HasScope][has_scope] has
 been solving this problem since 2009. I prefer keeping my query logic all in one
 place, though, instead of spreading it across my controllers and models.
 

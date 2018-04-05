@@ -9,7 +9,8 @@ module MiddlewareTest
     filters: [
       ->(genre:) { select { |item| item[:genre].match(/#{genre}/i) } },
       ->(name:) { select { |item| item[:name].match(/#{name}/i) } },
-      ->(order:) { sort_by { |item| item[order.to_sym] } }
+      ->(order:) { sort_by { |item| item[order.to_sym] } },
+      ->(releases:) { select { |item| item[:release_count] == releases.to_i } },
     ]
   }
 

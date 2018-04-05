@@ -35,6 +35,13 @@ shared_examples_for Rack::Reducer do
     end
   end
 
+  it 'handles falsy values' do
+    get('/artists?releases=0') do |response|
+      expect(response.body).to include('Chris Frank')
+      expect(JSON.parse(response.body).length).to eq(1)
+    end
+  end
+
   it 'can sort as well as filter' do
     get '/artists?order=genre' do |response|
       genre = JSON.parse(response.body)[0]['genre']

@@ -13,7 +13,8 @@ SEQUEL_QUERY = {
   filters: [
     ->(genre:) { grep(:genre, "%#{genre}%", case_insensitive: true) },
     ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-    ->(order: 'genre') { order(order.to_sym) }
+    ->(order: 'genre') { order(order.to_sym) },
+    ->(releases: ) { where(release_count: releases.to_i) },
   ]
 }.freeze
 

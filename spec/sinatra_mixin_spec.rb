@@ -6,11 +6,7 @@ class SinatraMixin < Sinatra::Base
   class Artist < Sequel::Model
     plugin :json_serializer
     extend Rack::Reducer
-    reduces dataset, filters: [
-      ->(genre:) { grep(:genre, "%#{genre}%", case_insensitive: true) },
-      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(order:) { order(order.to_sym) }
-    ]
+    reduces dataset, filters: SEQUEL_QUERY[:filters]
   end
 
   get '/artists' do

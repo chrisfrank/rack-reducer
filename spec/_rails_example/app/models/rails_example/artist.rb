@@ -14,7 +14,8 @@ module RailsExample
       # or scopes...
       ->(name:) { by_name(name) },
       # or inline ActiveRecord queries
-      ->(order:) { order(order.to_sym) }
+      ->(order:) { order(order.to_sym) },
+      ->(releases: ) { where(release_count: releases.to_i) },
     ]
   end
 end
