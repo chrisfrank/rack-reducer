@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = 'rack-reducer'
-  spec.version       = '0.1.1'
+  spec.version       = '0.1.2'
   spec.authors       = ['Chris Frank']
   spec.email         = ['chris.frank@thefutureproject.org']
   spec.summary       = 'Dynamically filter data via URL params, in any Rack app.'
