@@ -39,7 +39,8 @@ Rack::Reducer can help. It maps incoming URL params to an array of filter
 functions you define, applies only the applicable filters, and returns your
 filtered data.
 
-You can use Rack::Reducer in your choice of two styles: mixin or functional.
+You can use Rack::Reducer in your choice of two styles: **mixin** or
+**functional**.
 
 ### Mixin style
 Call `Model.reduce(params)` in your controllers...
@@ -151,8 +152,8 @@ class SinatraFunctionalApp < Sinatra::Base
   }
 
   get '/artists' do
-    @artists = Rack::Reducer.call(params, QUERY).to_a
-    @artists.to_json
+    @artists = Rack::Reducer.call(params, QUERY)
+    @artists.to_a.to_json
   end
 end
 ```

@@ -8,8 +8,8 @@ class SinatraFunctional < Sinatra::Base
   end
 
   get '/artists' do
-    @artists = Rack::Reducer.call(params, SEQUEL_QUERY).to_a
-    @artists.to_json
+    @artists = Rack::Reducer.call(params, SEQUEL_QUERY)
+    @artists.to_a.to_json
   end
 end
 
