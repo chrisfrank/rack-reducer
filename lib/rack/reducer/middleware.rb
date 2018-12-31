@@ -1,5 +1,4 @@
-# frozen_string_literal: true
-
+require 'rack/request'
 require_relative 'reduction'
 
 module Rack

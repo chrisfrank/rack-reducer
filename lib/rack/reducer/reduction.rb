@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require_relative 'refinements'
 require_relative 'parser'
 
@@ -8,7 +6,7 @@ module Rack
     # call `reduce` on a params hash, filtering data via lambdas with
     # matching keyword arguments
     class Reduction
-      using Refinements # augment Hash & Proc inside this scope
+      using Refinements # define Proc#required_argument_names, #satisfies?, etc
 
       DEFAULTS = {
         dataset: [],
@@ -18,7 +16,7 @@ module Rack
 
       def initialize(options)
         @props = DEFAULTS.merge(options)
-        @params = Parser.call(@props[:params]).symbolize_keys
+        @params = Parser.call(@props[:params])
       end
 
       def reduce
@@ -27,10 +25,10 @@ module Rack
 
       private
 
-      def apply_filter(data, fn)
-        requirements = fn.required_argument_names.to_set
-        return data unless @params.satisfies?(requirements)
-        data.instance_exec(@params.slice(*fn.all_argument_names), &fn)
+      def apply_filter(data, filter)
+        return data unless filter.satisfies?(@params)
+
+        data.instance_exec(@params.slice(*filter.all_argument_names), &filter)
       end
     end
   end

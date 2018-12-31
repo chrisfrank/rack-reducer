@@ -1,3 +1,5 @@
 *.gem
 *.swp
 *.swo
+doc
+.yardoc

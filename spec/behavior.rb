@@ -1,4 +1,4 @@
-shared_examples_for Rack::Reducer do
+RSpec.shared_examples_for Rack::Reducer do
   let(:app) { described_class }
 
   it 'responds with unfiltered data when filter params are empty' do

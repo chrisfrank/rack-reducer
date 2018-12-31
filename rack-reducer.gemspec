@@ -1,8 +1,12 @@
+lib = File.expand_path('lib', __dir__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'rack/reducer/version'
+
 Gem::Specification.new do |spec|
   spec.name          = 'rack-reducer'
-  spec.version       = '0.1.2'
+  spec.version       = Rack::Reducer::VERSION
   spec.authors       = ['Chris Frank']
-  spec.email         = ['chris.frank@thefutureproject.org']
+  spec.email         = ['chris.frank@future.com']
   spec.summary       = 'Dynamically filter data via URL params, in any Rack app.'
   spec.description   = 'Dynamically filter, sort, and paginate data via URL params, in any Rack app.'
   spec.homepage      = 'https://github.com/chrisfrank/rack-reducer'
@@ -11,9 +15,9 @@ Gem::Specification.new do |spec|
   spec.test_files    = Dir['spec/**/*.rb']
   spec.require_path  = 'lib'
 
-  spec.add_development_dependency 'bundler', '~> 1'
-  spec.add_development_dependency 'benchmark-ips', '~> 2'
-  spec.add_development_dependency 'pry', '~> 0'
+  spec.add_development_dependency 'bundler', '~> 1.16'
+  spec.add_development_dependency 'benchmark-ips', '~> 2.7'
+  spec.add_development_dependency 'pry', '~> 0.11'
   spec.add_development_dependency 'hanami', '~> 1'
   spec.add_development_dependency 'hanami-model', '~> 1'
   spec.add_development_dependency 'rack-test', '~> 0'
@@ -21,9 +25,11 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake', '~> 12'
   spec.add_development_dependency 'roda', '~> 3'
   spec.add_development_dependency 'rspec', '~> 3'
+  spec.add_development_dependency 'rubocop', '~> 0.61'
   spec.add_development_dependency 'sequel', '~> 4'
   spec.add_development_dependency 'sinatra', '~> 2'
   spec.add_development_dependency 'sqlite3', '~> 1'
+  spec.add_development_dependency 'yard', '~> 0.9'
 
   spec.add_dependency 'rack', '>= 1.6', '< 3'
   spec.required_ruby_version = '>= 2.2'

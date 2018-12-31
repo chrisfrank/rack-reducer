@@ -1,28 +1,28 @@
-# frozen_string_literal: true
-
 module Rack
   module Reducer
-    # refine a few core classes in Rack::Reducer's scope only
+    # refine Proc and hash in this scope only
     module Refinements
-      refine Hash do
-        def symbolize_keys
-          each_with_object({}) do |(key, val), hash|
-            hash[key.to_sym] = val.is_a?(Hash) ? val.symbolize_keys : val
-          end
-        end
-
-        def satisfies?(requirements)
-          slice(*requirements).keys.to_set == requirements
-        end
-      end
-
       refine Proc do
         def required_argument_names
-          parameters.select { |arg| arg[0] == :keyreq }.map(&:last)
+          parameters.select { |type, _| type == :keyreq }.map(&:last)
         end
 
         def all_argument_names
           parameters.map(&:last)
+        end
+
+        def satisfies?(params)
+          keywords = required_argument_names
+          params.slice(*keywords).keys.to_set == keywords.to_set
+        end
+      end
+
+      # backport Hash#slice for older rubies
+      unless {}.respond_to?(:slice)
+        refine Hash do
+          def slice(*keys)
+            [keys, values_at(*keys)].transpose.select { |_k, val| val }.to_h
+          end
         end
       end
     end

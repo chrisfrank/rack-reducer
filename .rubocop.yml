@@ -1,2 +1,25 @@
 AllCops:
   TargetRubyVersion: 2.5
+Layout/LeadingCommentSpace:
+  Enabled: false
+Metrics/BlockLength:
+  Enabled: false
+Style/FrozenStringLiteralComment:
+  EnforcedStyle: never
+Style/AsciiComments:
+  Enabled: false
+  StyleGuide: http://relaxed.ruby.style/#styleasciicomments
+Style/TrailingCommaInArguments:
+  Enabled: false
+  StyleGuide: http://relaxed.ruby.style/#styletrailingcommainarguments
+  EnforcedStyleForMultiline: consistent_comma
+Style/TrailingCommaInArrayLiteral:
+  Enabled: false
+  StyleGuide: http://relaxed.ruby.style/#styletrailingcommainliteral
+  EnforcedStyleForMultiline: consistent_comma
+Style/TrailingCommaInHashLiteral:
+  Enabled: false
+  StyleGuide: http://relaxed.ruby.style/#styletrailingcommainliteral
+  EnforcedStyleForMultiline: consistent_comma
+Style/Documentation:
+  Enabled: false
