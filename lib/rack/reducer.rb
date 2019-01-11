@@ -20,24 +20,24 @@ module Rack
 
     # Extend Rack::Reducer to get `reduce` and `reduces` as class-methods
     #
-    # class Artist < SomeORM::Model
-    #   extend Rack::Reducer
-    #   reduces self.all, filters: [
-    #     lambda { |name:| where(name: name) },
-    #     lambda { |genre:| where(genre: genre) },
-    #   ]
-    # end
-    def reduce(params)
-      Reduction.new(
-        params: params,
-        filters: @rack_reducer_filters,
-        dataset: @rack_reducer_dataset
-      ).reduce
-    end
-
+    # @example Make an "Aritsts" model reducible
+    #   class Artist < SomeORM::Model
+    #     extend Rack::Reducer
+    #     reduces self.all, filters: [
+    #       lambda { |name:| where(name: name) },
+    #       lambda { |genre:| where(genre: genre) },
+    #     ]
+    #   end
+    #
+    #   Artist.reduce(params)
     def reduces(dataset, filters:)
-      @rack_reducer_dataset = dataset
-      @rack_reducer_filters = filters
+      define_singleton_method :reduce do |params|
+        Reduction.new(
+          params: params,
+          filters: filters,
+          dataset: dataset,
+        ).reduce
+      end
     end
   end
 end
