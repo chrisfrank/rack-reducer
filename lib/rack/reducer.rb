@@ -4,7 +4,21 @@ require_relative 'reducer/middleware'
 module Rack
   # Use request params to apply filters to a dataset
   module Reducer
-    # Call Rack::Reducer as a function
+    # Filter a dataset
+    # @param params [Hash] Rack-compatible URL params
+    # @param dataset [Object] A dataset, e.g. one of your App's models
+    # @param filters [Array<Proc>] An array of lambdas with keyword arguments
+    # @example Call Rack::Reducer as a function in a Sinatra app
+    #   ArtistReducer = {
+    #     dataset: Artist,
+    #     filters: [
+    #       lambda { |name:| where(name: name) },
+    #       lambda { |genre:| where(genre: genre) },
+    #     ]
+    #   }
+    #   get '/artists' do
+    #     @artists = Rack::Reducer.call(params, ArtistReducer)
+    #   end
     def self.call(params, dataset:, filters:)
       Reduction.new(
         params: params,
@@ -18,9 +32,8 @@ module Rack
       Middleware.new(app, options)
     end
 
-    # Extend Rack::Reducer to get `reduce` and `reduces` as class-methods
-    #
-    # @example Make an "Aritsts" model reducible
+    # Extend Rack::Reducer to get +reduce+ and +reduces+ as class-methods
+    # @example Make an "Artists" model reducible
     #   class Artist < SomeORM::Model
     #     extend Rack::Reducer
     #     reduces self.all, filters: [

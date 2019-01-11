@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rack-reducer (1.0.0)
+    rack-reducer (1.0.1)
       rack (>= 1.6, < 3)
 
 GEM

@@ -26,5 +26,7 @@ module Rack
         end
       end
     end
+
+    private_constant :Refinements
   end
 end

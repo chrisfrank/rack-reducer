@@ -20,16 +20,14 @@ module Rack
       end
 
       def reduce
-        @props[:filters].reduce(@props[:dataset], &method(:apply_filter))
-      end
+        @props[:filters].reduce(@props[:dataset]) do |data, filter|
+          next data unless filter.satisfies?(@params)
 
-      private
-
-      def apply_filter(data, filter)
-        return data unless filter.satisfies?(@params)
-
-        data.instance_exec(@params.slice(*filter.all_argument_names), &filter)
+          data.instance_exec(@params.slice(*filter.all_argument_names), &filter)
+        end
       end
     end
+
+    private_constant :Reduction
   end
 end
