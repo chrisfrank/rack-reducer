@@ -15,8 +15,8 @@ Gem::Specification.new do |spec|
   spec.test_files    = Dir['spec/**/*.rb']
   spec.require_path  = 'lib'
 
-  spec.add_development_dependency 'bundler', '~> 1.16'
-  spec.add_development_dependency 'benchmark-ips', '~> 2.7'
+  spec.add_development_dependency 'bundler', '~> 2'
+  spec.add_development_dependency 'benchmark-ips'
   spec.add_development_dependency 'pry', '~> 0.11'
   spec.add_development_dependency 'hanami', '~> 1'
   spec.add_development_dependency 'hanami-model', '~> 1'
