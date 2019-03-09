@@ -8,19 +8,14 @@ module Rack
     class Reduction
       using Refinements # define Proc#required_argument_names, #satisfies?, etc
 
-      DEFAULTS = {
-        dataset: [],
-        filters: [],
-        params: nil
-      }.freeze
-
-      def initialize(options)
-        @props = DEFAULTS.merge(options)
-        @params = Parser.call(@props[:params])
+      def initialize(dataset, *filters)
+        @dataset = dataset
+        @filters = filters
       end
 
-      def reduce
-        @props[:filters].reduce(@props[:dataset]) do |data, filter|
+      def call(params)
+        @params = Parser.call(params)
+        @filters.reduce(@dataset) do |data, filter|
           next data unless filter.satisfies?(@params)
 
           data.instance_exec(@params.slice(*filter.all_argument_names), &filter)

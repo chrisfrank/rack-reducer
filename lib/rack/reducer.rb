@@ -4,6 +4,9 @@ require_relative 'reducer/middleware'
 module Rack
   # Use request params to apply filters to a dataset
   module Reducer
+    def self.create(dataset, *filters)
+      Reduction.new(dataset, *filters)
+    end
     # Filter a dataset
     # @param params [Hash] Rack-compatible URL params
     # @param dataset [Object] A dataset, e.g. one of your App's models
