@@ -12,8 +12,7 @@ module App
     ]
   }
 
-  ArtistReducer = Rack::Reducer.create(
-    DB[:artists],
+  FILTERS = [
     ->(genre:) {
       select { |item| item[:genre].match(/#{genre}/i) }
     },
@@ -26,7 +25,9 @@ module App
     ->(releases:) {
       select { |item| item[:release_count].to_i == releases.to_i }
     },
-  )
+  ]
+
+  ArtistReducer = Rack::Reducer.create(DB[:artists], *FILTERS)
 
   def self.call(env)
     req = Rack::Request.new(env)

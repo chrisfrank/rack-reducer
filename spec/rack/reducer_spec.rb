@@ -57,4 +57,22 @@ RSpec.describe Rack::Reducer do
       expect(genre).to eq('alternative')
     end
   end
+
+  describe 'ad-hoc style via ::call' do
+    it 'is still supported' do
+      params = { 'genre' => 'electronic', 'name' => 'blake' }
+      result = Rack::Reducer.call(
+        params,
+        dataset: App::DB[:artists],
+        filters: App::FILTERS,
+      )
+      expect(result.count).to eq(1)
+      expect(result[0][:name]).to eq('James Blake')
+    end
+  end
+
+  describe 'mixin-style' do
+    it 'is still supported'
+    it 'raises a deprecation warning'
+  end
 end
