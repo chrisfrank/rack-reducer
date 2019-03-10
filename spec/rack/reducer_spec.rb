@@ -3,6 +3,7 @@ require_relative '../fixtures'
 
 RSpec.describe Rack::Reducer do
   using SpecRefinements
+
   let(:app) do
     lambda do |env|
       req = Rack::Request.new(env)
@@ -22,6 +23,13 @@ RSpec.describe Rack::Reducer do
       expect(response.body).to include('Blake Mills')
       expect(response.body).to include('James Blake')
       expect(response.body).not_to include('SZA')
+    end
+  end
+
+  it 'resets state between requests' do
+    get('/artists?name=Blake')
+    get('/artists') do |res|
+      expect(res.json.count).to eq(Fixtures::DB[:artists].count)
     end
   end
 
