@@ -14,11 +14,14 @@ module Rack
       end
 
       def call(params)
-        @params = Parser.call(params)
+        symbolized_params = params.to_h.symbolize_keys
         @filters.reduce(@dataset) do |data, filter|
-          next data unless filter.satisfies?(@params)
+          next data unless filter.satisfies?(symbolized_params)
 
-          data.instance_exec(@params.slice(*filter.all_argument_names), &filter)
+          data.instance_exec(
+            **symbolized_params.slice(*filter.all_argument_names),
+            &filter
+          )
         end
       end
     end
