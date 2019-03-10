@@ -1,18 +1,19 @@
 require 'spec_helper'
-require_relative '../app'
+require_relative '../fixtures'
 
 RSpec.describe Rack::Reducer do
-  using Module.new {
-    refine Rack::MockResponse do
-      define_method(:json) { JSON.parse(body) }
+  using SpecRefinements
+  let(:app) do
+    lambda do |env|
+      req = Rack::Request.new(env)
+      res = Fixtures::ArtistReducer.call(req.params).to_json
+      [200, { 'Content-Type' => 'application/json' }, [res]]
     end
-  }
-
-  let(:app) { App }
+  end
 
   it 'responds with unfiltered data when filter params are empty' do
     get('/') do |res|
-      expect(res.json.count).to eq(App::DB[:artists].count)
+      expect(res.json.count).to eq(Fixtures::DB[:artists].count)
     end
   end
 
@@ -59,12 +60,12 @@ RSpec.describe Rack::Reducer do
   end
 
   describe 'ad-hoc style via ::call' do
-    it 'is still supported' do
+    it 'works just like the primary style, but slower' do
       params = { 'genre' => 'electronic', 'name' => 'blake' }
       result = Rack::Reducer.call(
         params,
-        dataset: App::DB[:artists],
-        filters: App::FILTERS,
+        dataset: Fixtures::DB[:artists],
+        filters: Fixtures::FILTERS,
       )
       expect(result.count).to eq(1)
       expect(result[0][:name]).to eq('James Blake')
@@ -72,7 +73,20 @@ RSpec.describe Rack::Reducer do
   end
 
   describe 'mixin-style' do
-    it 'is still supported'
-    it 'raises a deprecation warning'
+    before { @warnings = [] }
+
+    let(:model) do
+      dataset = Fixtures::DB[:artists].dup
+      allow(dataset).to(receive(:warn)) { |msg| @warnings << msg }
+      dataset.extend Rack::Reducer
+      dataset.reduces dataset, filters: Fixtures::FILTERS
+      dataset
+    end
+
+    it 'is still supported, but with a deprecation warning' do
+      params = { 'genre' => 'electronic', 'name' => 'blake' }
+      expect(model.reduce(params).count).to eq(1)
+      expect(@warnings.first).to include('mixin-style is deprecated')
+    end
   end
 end

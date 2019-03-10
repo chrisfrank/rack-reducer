@@ -17,7 +17,7 @@ module Rack
         end
       end
 
-      # backport Hash#slice for older rubies
+      # backport Hash#slice for Ruby < 2.4
       unless {}.respond_to?(:slice)
         refine Hash do
           def slice(*keys)

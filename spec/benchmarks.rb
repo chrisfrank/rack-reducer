@@ -1,40 +1,48 @@
+require 'rspec'
+require 'rack/reducer'
 require_relative 'spec_helper'
-require 'sinatra/base'
 require 'json'
 require 'benchmark/ips'
+require_relative 'fixtures'
 
-Conditionals = lambda do |params = {}|
-  @artists = DB[:artists]
-  if (genre = params[:genre])
-    @artists = @artists.grep(:genre, "%#{genre}%", case_insensitive: true)
-  end
-  if (name = params[:name])
-    @artists = @artists.grep(:name, "%#{name}%", case_insensitive: true)
-  end
+module MockController
+  def self.via_conditionals(params)
+    @artists = Fixtures::DB[:artists]
+    if (genre = params[:genre])
+      @artists = @artists.select { |item| item[:genre].match(/#{genre}/i) }
+    end
+    if (name = params[:name])
+      @artists = @artists.select { |item| item[:name].match(/#{name}/i) }
+    end
 
-  @artists.to_json
+    @artists
+  end
 end
 
-Reduction = lambda do |params = {}|
-  @artists = Rack::Reducer.call(params, dataset: DB[:artists], filters: [
-    ->(genre:) { grep(:genre, "%#{genre}%", case_insensitive: true) },
-    ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-  ])
+Benchmark.ips do |bm|
+  params = { name: 'blake', genre: 'electronic' }
 
-  @artists.to_json
-end
-
-Benchmark.ips(3) do |bm|
-  bm.report('conditionals, empty params') { Conditionals.call }
-
-  bm.report('reduction, empty params') { Reduction.call }
-
-  bm.report('conditionals, full params') do
-    Conditionals.call({ name: 'blake', genre: 'electric' })
+  bm.report('conditionals') do
+    MockController.via_conditionals(params.dup)
   end
 
-  bm.report('reduction, full params') do
-    Reduction.call({ name: 'blake', genre: 'electric' })
+  bm.report('reduction, ad-hoc') do
+    Rack::Reducer.call(
+      params,
+      dataset: Fixtures::DB[:artists],
+      filters: [
+        ->(genre:) {
+          select { |item| item[:genre].match(/#{genre}/i) }
+        },
+        ->(name:) {
+          select { |item| item[:name].match(/#{name}/i) }
+        },
+      ]
+    )
+  end
+
+  bm.report('reduction, default') do
+    Fixtures::ArtistReducer.call(params)
   end
 
   bm.compare!

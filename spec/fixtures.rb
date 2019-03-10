@@ -1,6 +1,4 @@
-require 'rack/request'
-
-module App
+module Fixtures
   DB = {
     artists: [
       { name: 'Blake Mills', genre: 'alternative', release_count: 3 },
@@ -28,10 +26,5 @@ module App
   ]
 
   ArtistReducer = Rack::Reducer.create(DB[:artists], *FILTERS)
-
-  def self.call(env)
-    req = Rack::Request.new(env)
-    res = ArtistReducer.call(req.params).to_json
-    [200, { 'Content-Type' => 'application/json' }, [res]]
-  end
 end
+

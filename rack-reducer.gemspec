@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Chris Frank']
   spec.email         = ['chris.frank@future.com']
   spec.summary       = 'Dynamically filter data via URL params, in any Rack app.'
-  spec.description   = 'Dynamically filter, sort, and paginate data via URL params, in any Rack app.'
+  spec.description   = 'Dynamically filter data via URL params, in any Rack app.'
   spec.homepage      = 'https://github.com/chrisfrank/rack-reducer'
   spec.license       = 'MIT'
   spec.files         = Dir['README.md', 'lib/**/*']
@@ -25,5 +25,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'yard', '~> 0.9'
 
   spec.add_dependency 'rack', '>= 1.6', '< 3'
-  spec.required_ruby_version = '>= 2.2'
+  spec.required_ruby_version = '>= 2.3'
 end

@@ -9,3 +9,9 @@ RSpec.configure do |config|
   config.order = :random
   config.include Rack::Test::Methods
 end
+
+module SpecRefinements
+  refine Rack::MockResponse do
+    define_method(:json) { JSON.parse(body) }
+  end
+end
