@@ -1,12 +1,17 @@
+# frozen_string_literal: true
+
 require_relative 'reducer/reduction'
 require_relative 'reducer/middleware'
 
 module Rack
   # Use request params to apply filters to a dataset
   module Reducer
-    # Create a Reducer that can run the @filters against @dataset
-    # @param [Object] A dataset, e.g. a Model or Enumerable
-    # @param [Array<Proc>] Lambdas with keyword arguments
+    # Create a Reduction object that can filter a dataset on #call
+    # @param [Object] dataset an ActiveRecord::Relation, Sequel::Dataset,
+    #   or other class with chainable methods
+    # @param [Array<Proc>] filters  An array of lambdas whose keyword arguments
+    #   name the URL params you will use as filters
+    # @return Rack::Reducer::Reduction
     # @example Create a reducer and use it in a Sinatra app
     #   DB = Sequel.connect(ENV['DATABASE_URL'])
     #   MyReducer = Rack::Reducer.create(
@@ -42,6 +47,10 @@ module Rack
     end
 
     # Mount Rack::Reducer as middleware
+    # @deprecated
+    #   Rack::Reducer.new will become an alias of ::create in v2.0.
+    #   To mount middleware that will still work in 2.0, write
+    #   "use Rack::Reducer::Middleware" instead of "use Rack::Reducer"
     def self.new(app, options = {})
       warn <<~WARNING
         #{caller(1..1).first}:
@@ -53,6 +62,7 @@ module Rack
     end
 
     # Extend Rack::Reducer to get +reduce+ and +reduces+ as class-methods
+    #
     # @example Make an "Artists" model reducible
     #   class Artist < SomeORM::Model
     #     extend Rack::Reducer
@@ -61,8 +71,15 @@ module Rack
     #       lambda { |genre:| where(genre: genre) },
     #     ]
     #   end
-    #
     #   Artist.reduce(params)
+    #
+    # @deprecated
+    #   Rack::Reducer's mixin-style is deprecated and may be removed in 2.0.
+    #   To keep using Rack::Reducer in your models, create a Reducer constant.
+    #     class MyModel < ActiveRecord::Base
+    #       MyReducer = Rack::Reducer.create(dataset, *filter_functions)
+    #     end
+    #     MyModel::MyReducer.call(params)
     def reduces(dataset, filters:)
       warn <<~WARNING
         #{caller(1..1).first}:

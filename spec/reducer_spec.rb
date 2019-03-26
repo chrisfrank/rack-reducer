@@ -1,5 +1,5 @@
 require 'spec_helper'
-require_relative '../fixtures'
+require_relative 'fixtures'
 
 RSpec.describe Rack::Reducer do
   using SpecRefinements

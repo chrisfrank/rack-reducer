@@ -1,5 +1,6 @@
+# frozen_string_literal: true
+
 require_relative 'refinements'
-require_relative 'parser'
 
 module Rack
   module Reducer
@@ -13,6 +14,10 @@ module Rack
         @filters = filters
       end
 
+      # Run @filters against the params argument and return a filtered @datset
+      # @param [Hash, ActionController::Parameters, Object] params
+      #   a Rack-compatible params hash
+      # @return filtered data
       def call(params)
         symbolized_params = params.to_unsafe_h.symbolize_keys
         @filters.reduce(@dataset) do |data, filter|
@@ -25,7 +30,5 @@ module Rack
         end
       end
     end
-
-    private_constant :Reduction
   end
 end
