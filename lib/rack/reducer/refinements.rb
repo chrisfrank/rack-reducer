@@ -32,6 +32,8 @@ module Rack
             hash[key.to_sym] = val.is_a?(Hash) ? symbolize(val) : val
           end
         end
+
+        alias_method :to_unsafe_h, :to_h
       end
     end
 

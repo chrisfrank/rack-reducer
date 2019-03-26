@@ -15,12 +15,14 @@ Gem::Specification.new do |spec|
   spec.test_files    = Dir['spec/**/*.rb']
   spec.require_path  = 'lib'
 
+  spec.add_development_dependency 'actionpack', '~> 5.2'
   spec.add_development_dependency 'bundler', '~> 2'
   spec.add_development_dependency 'benchmark-ips'
   spec.add_development_dependency 'benchmark-memory'
   spec.add_development_dependency 'pry', '~> 0.11'
   spec.add_development_dependency 'rack-test', '~> 0'
   spec.add_development_dependency 'rake', '~> 12'
+  spec.add_development_dependency 'railties', '~> 5.2'
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'rubocop', '~> 0.61'
   spec.add_development_dependency 'yard', '~> 0.9'

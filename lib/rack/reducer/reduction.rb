@@ -14,7 +14,7 @@ module Rack
       end
 
       def call(params)
-        symbolized_params = params.to_h.symbolize_keys
+        symbolized_params = params.to_unsafe_h.symbolize_keys
         @filters.reduce(@dataset) do |data, filter|
           next data unless filter.satisfies?(symbolized_params)
 
