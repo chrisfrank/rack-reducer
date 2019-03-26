@@ -44,16 +44,27 @@ Benchmark.ips do |bm|
   env = {
     'REQUEST_METHOD' => 'GET',
     'PATH_INFO' => '/',
-    'QUERY_STRING' => 'name=blake&genre=electronic',
     'rack.input' => StringIO.new('')
   }
 
-  bm.report('Conditionals') do
-    conditional_app.call(env.dup)
+  query = {
+    'QUERY_STRING' => 'name=blake&genre=electronic',
+  }
+
+  bm.report('Conditionals (full)') do
+    conditional_app.call env.merge(query)
   end
 
-  bm.report('Reducer') do
-    reducer_app.call(env.dup)
+  bm.report('Reducer (full)') do
+    reducer_app.call env.merge(query)
+  end
+
+  bm.report('Conditionals (empty)') do
+    conditional_app.call env.dup
+  end
+
+  bm.report('Reducer (empty)') do
+    reducer_app.call env.dup
   end
 
   bm.compare!

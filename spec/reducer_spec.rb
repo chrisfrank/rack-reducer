@@ -60,7 +60,11 @@ RSpec.describe Rack::Reducer do
     end
   end
 
-  it 'can sort as well as filter' do
+  it 'accepts nil as params' do
+    expect(Fixtures::ArtistReducer.apply(nil)).to be_truthy
+  end
+
+  it 'can sort' do
     get '/artists?order=genre' do |response|
       genre = response.json[0]['genre']
       expect(genre).to eq('alternative')
@@ -68,8 +72,8 @@ RSpec.describe Rack::Reducer do
   end
 
   describe 'ad-hoc style via ::call' do
+    let(:params) { { 'genre' => 'electronic', 'name' => 'blake' } }
     it 'works just like the primary style, but slower' do
-      params = { 'genre' => 'electronic', 'name' => 'blake' }
       result = Rack::Reducer.call(
         params,
         dataset: Fixtures::DB[:artists],

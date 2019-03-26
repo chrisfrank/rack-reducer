@@ -6,6 +6,7 @@ require 'securerandom'
 class RailsApp < Rails::Application
   routes.append do
     get "/", to: "artists#index"
+    get "/query", to: "artists#query"
   end
 
   config.api_only = true
@@ -18,12 +19,18 @@ class ArtistsController < ActionController::API
     @artists = Fixtures::ArtistReducer.apply(params)
     render json: @artists
   end
+
+  def query
+    @artists = Fixtures::ArtistReducer.apply(request.query_parameters)
+    render json: @artists
+  end
 end
 
 RSpec.describe RailsApp do
   let(:app) { RailsApp.initialize! }
 
-  it 'works with the deafult Rails params hash' do
+  it 'works with ActionController::Parameters and a plain hash' do
     get('/') { |res| expect(res.status).to eq(200) }
+    get('/query') { |res| expect(res.status).to eq(200) }
   end
 end

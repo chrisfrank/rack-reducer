@@ -14,11 +14,13 @@ module Rack
         @filters = filters
       end
 
-      # Run @filters against the params argument and return a filtered @datset
-      # @param [Hash, ActionController::Parameters, Object] params
+      # Run +@filters+ against the params argument
+      # @param [Hash, ActionController::Parameters, nil] params
       #   a Rack-compatible params hash
-      # @return filtered data
+      # @return +@dataset+ with the matching filters applied
       def apply(params)
+        return @dataset if !params || params.empty?
+
         symbolized_params = params.to_unsafe_h.symbolize_keys
         @filters.reduce(@dataset) do |data, filter|
           next data unless filter.satisfies?(symbolized_params)

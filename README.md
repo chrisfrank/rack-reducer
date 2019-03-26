@@ -13,7 +13,9 @@ Add `rack-reducer` to your Gemfile:
 gem 'rack-reducer', require: 'rack/reducer'
 ```
 
-Quickstart
+Rack::Reducer has zero dependencies beyond Rack itself.
+
+Use
 ------------------------------------------
 If your app needs to render a list of database records, you probably want those
 records to be filterable via URL params, like so:
@@ -26,10 +28,7 @@ GET /artists?genre=electronic&name=blake => electronic artists named 'blake'
 
 Rack::Reducer can help. It applies incoming URL params to an array of filter
 functions you define, runs only the relevant filters, and returns your filtered
-data. You worry about writing filters, Rack::Reducer worries about when to
-apply them.
-
-Here it is in a Rails controller:
+data. Here’s how you might use it in a Rails controller:
 
 ```ruby
 # app/controllers/artists_controller.rb
@@ -41,7 +40,7 @@ class ArtistsController < ApplicationController
     ->(genre:) { where(genre: genre) },
   )
 
-  # Step 2: Apply it to incoming requests
+  # Step 2: Apply the reducer to incoming requests
   def index
     @artists = ArtistReducer.apply(params)
     render json: @artists
@@ -142,8 +141,8 @@ use Rack::Reducer::Midleware, key: 'custom.key', dataset: ARTISTS, filters: [
 ]
 ```
 
-### Rails Scopes
-The Rails [quickstart example](#quickstart) created a reducer inside a
+### With Rails scopes
+The Rails [quickstart example](#use) created a reducer inside a
 controller, but if your filters use lots of ActiveRecord `scope`s, it might make
 more sense to keep your reducers in your models instead.
 
@@ -173,7 +172,8 @@ class ArtistsController < ApplicationController
 end
 ```
 
-### Default filters
+Default filters
+------------------------------------------
 Most of the time it makes sense to use *required* keyword arguments for each
 filter, and skip running the filter altogether when the keyword argments aren't
 present.
@@ -198,7 +198,8 @@ class ArtistsController < ApplicationController
 end
 ```
 
-### Calling Rack::Reducer as a function
+Calling Rack::Reducer as a function
+-------------------------------------------
 TODO
 
 How Rack::Reducer Works
@@ -223,20 +224,41 @@ own dataset.
 
 Performance
 ---------------------
-According to `spec/benchmarks.rb`, Rack::Reducer is about 10% slower than a set
-of hard-coded `if` statements. It is unlikely to be a bottleneck in your app.
+For requests with empty params, Rack::Reducer has no measurable performance
+impact. For requests with populated params, Rack::Reducer is about 10% slower
+than a set of hand-coded conditionals, according to `spec/benchmarks.rb`.
 
 ```
-Warming up --------------------------------------
-        Conditionals   521.000  i/100ms
-             Reducer   433.000  i/100ms
+ Conditionals (full)   530.000  i/100ms
+      Reducer (full)   432.000  i/100ms
+Conditionals (empty)   780.000  i/100ms
+     Reducer (empty)   808.000  i/100ms
 Calculating -------------------------------------
-        Conditionals      4.782k (± 2.2%) i/s -     23.966k in   5.013863s
-             Reducer      4.358k (± 2.8%) i/s -     22.083k in   5.071282s
+ Conditionals (full)      4.864k (± 2.3%) i/s -     24.380k in   5.015551s
+      Reducer (full)      4.384k (± 1.3%) i/s -     22.032k in   5.026651s
+Conditionals (empty)      7.889k (± 1.7%) i/s -     39.780k in   5.043797s
+     Reducer (empty)      8.129k (± 1.7%) i/s -     41.208k in   5.070453s
 
 Comparison:
-        Conditionals:     4782.2 i/s
-             Reducer:     4358.1 i/s - 1.10x  slower
+     Reducer (empty):     8129.5 i/s
+Conditionals (empty):     7889.3 i/s - same-ish: difference falls within error
+ Conditionals (full):     4863.7 i/s - 1.67x  slower
+      Reducer (full):     4383.8 i/s - 1.85x  slower
+```
+
+In Rails, note that `params` is never empty, so use `request.query_parameters`
+instead if you want to handle parameterless requests at top speed.
+
+```ruby
+# app/controllers/artists_controller.rb
+class ArtistController < ApplicationController
+  # ArtistReducer = Rack::Reducer.create(...etc etc)
+
+  def index
+    @artists = ArtistReducer.apply(request.query_parameters)
+    render json: @artists
+  end
+end
 ```
 
 Alternatives
@@ -245,8 +267,8 @@ If you're working in Rails, Plataformatec's excellent [HasScope][has_scope] has
 been solving this problem since 2009. I prefer keeping my request logic all in
 one place, though, instead of spreading it across my controllers and models.
 
-[Periscope][periscope], by laserlemon, seems like another good Rails option, and
-though it's Rails only, it supports more than just ActiveRecord.
+[Periscope][periscope], by Steve Richert, seems like another solid Rails option.
+It is Rails-only, but it supports more than just ActiveRecord.
 
 For Sinatra, Simon Courtois has a [Sinatra port of has_scope][sin_has_scope].
 It depends on ActiveRecord.
