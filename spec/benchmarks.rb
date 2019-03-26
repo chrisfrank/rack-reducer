@@ -1,52 +1,59 @@
-require 'rspec'
-require_relative 'spec_helper'
+require 'rack'
+require 'pry'
 require 'json'
+require_relative '../lib/rack/reducer'
 require 'benchmark/ips'
-require 'benchmark/memory'
 require_relative 'fixtures'
+require 'sequel'
+
+DB = Sequel.sqlite.tap do |db|
+  db.create_table(:artists) do
+    primary_key :id
+    String :name
+    String :genre
+    Integer :release_count
+  end
+  Fixtures::DB[:artists].each { |row| db[:artists].insert(row) }
+end
+
+conditional_app = lambda do |env|
+  params = Rack::Request.new(env).params
+  @artists = DB[:artists]
+  if (genre = params['genre'])
+    @artists = @artists.where(genre: genre.to_s)
+  end
+  if (name = params['name'])
+    @artists = @artists.grep(:name, "%#{name}%", case_insensitive: true)
+  end
+  Rack::Response.new(@artists).finish
+end
 
 TestReducer = Rack::Reducer.create(
-  Fixtures::DB[:artists],
-  ->(genre:) {
-    select { |item| item[:genre].match(/#{genre}/i) }
-  },
-  ->(name:) {
-    select { |item| item[:name].match(/#{name}/i) }
-  },
+  DB[:artists],
+  ->(genre:) { where(genre: genre.to_s) },
+  ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
 )
 
+reducer_app = lambda do |env|
+  params = Rack::Request.new(env).params
+  @artists = TestReducer.apply(params)
+  Rack::Response.new(@artists).finish
+end
+
 Benchmark.ips do |bm|
-  params = { name: 'blake', genre: 'electronic' }
+  env = {
+    'REQUEST_METHOD' => 'GET',
+    'PATH_INFO' => '/',
+    'QUERY_STRING' => 'name=blake&genre=electronic',
+    'rack.input' => StringIO.new('')
+  }
 
-  bm.report('conditionals') do
-    @artists = Fixtures::DB[:artists]
-    if (genre = params[:genre])
-      @artists = @artists.select { |item| item[:genre].match(/#{genre}/i) }
-    end
-    if (name = params[:name])
-      @artists = @artists.select { |item| item[:name].match(/#{name}/i) }
-    end
-
-    @artists
+  bm.report('Conditionals') do
+    conditional_app.call(env.dup)
   end
 
-  bm.report('reduction, ad-hoc') do
-    Rack::Reducer.call(
-      params.dup,
-      dataset: Fixtures::DB[:artists],
-      filters: [
-        ->(genre:) {
-          select { |item| item[:genre].match(/#{genre}/i) }
-        },
-        ->(name:) {
-          select { |item| item[:name].match(/#{name}/i) }
-        },
-      ]
-    )
-  end
-
-  bm.report('reduction, default') do
-    TestReducer.call(params.dup)
+  bm.report('Reducer') do
+    reducer_app.call(env.dup)
   end
 
   bm.compare!

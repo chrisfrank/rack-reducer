@@ -7,7 +7,7 @@ RSpec.describe Rack::Reducer do
   let(:app) do
     lambda do |env|
       req = Rack::Request.new(env)
-      res = Fixtures::ArtistReducer.call(req.params).to_json
+      res = Fixtures::ArtistReducer.apply(req.params).to_json
       [200, { 'Content-Type' => 'application/json' }, [res]]
     end
   end

@@ -15,7 +15,7 @@ end
 
 class ArtistsController < ActionController::API
   def index
-    @artists = Fixtures::ArtistReducer.call(params)
+    @artists = Fixtures::ArtistReducer.apply(params)
     render json: @artists
   end
 end

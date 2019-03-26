@@ -30,7 +30,7 @@ module Rack
       # to the ouput of a reduction
       def call(env)
         params = Rack::Request.new(env).params
-        reduction = @reducer.call(params)
+        reduction = @reducer.apply(params)
         @app.call env.merge(@key => reduction)
       end
     end

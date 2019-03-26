@@ -6,7 +6,7 @@ require_relative 'reducer/middleware'
 module Rack
   # Use request params to apply filters to a dataset
   module Reducer
-    # Create a Reduction object that can filter a dataset on #call
+    # Create a Reduction object that can filter a dataset via #apply
     # @param [Object] dataset an ActiveRecord::Relation, Sequel::Dataset,
     #   or other class with chainable methods
     # @param [Array<Proc>] filters  An array of lambdas whose keyword arguments
@@ -21,7 +21,7 @@ module Rack
     #   )
     #
     #   get '/artists' do
-    #     @artists = MyReducer.call(params)
+    #     @artists = MyReducer.apply(params)
     #     @artists.to_json
     #   end
     def self.create(dataset, *filters)
@@ -43,7 +43,7 @@ module Rack
     #     ])
     #   end
     def self.call(params, dataset:, filters:)
-      Reduction.new(dataset, *filters).call(params)
+      Reduction.new(dataset, *filters).apply(params)
     end
 
     # Mount Rack::Reducer as middleware
@@ -92,7 +92,7 @@ module Rack
       WARNING
       reducer = Reduction.new(dataset, *filters)
       define_singleton_method :reduce do |params|
-        reducer.call(params)
+        reducer.apply(params)
       end
     end
   end

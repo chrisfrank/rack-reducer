@@ -7,8 +7,8 @@ Gem::Specification.new do |spec|
   spec.version       = Rack::Reducer::VERSION
   spec.authors       = ['Chris Frank']
   spec.email         = ['chris.frank@future.com']
-  spec.summary       = 'Dynamically filter data via URL params, in any Rack app.'
-  spec.description   = 'Dynamically filter data via URL params, in any Rack app.'
+  spec.summary       = 'Declaratively filter data via URL params, in any Rack app.'
+  spec.description   = 'Declaratively filter data via URL params, in any Rack app.'
   spec.homepage      = 'https://github.com/chrisfrank/rack-reducer'
   spec.license       = 'MIT'
   spec.files         = Dir['README.md', 'lib/**/*']
@@ -16,15 +16,17 @@ Gem::Specification.new do |spec|
   spec.require_path  = 'lib'
 
   spec.add_development_dependency 'actionpack', '~> 5.2'
-  spec.add_development_dependency 'bundler', '~> 2'
   spec.add_development_dependency 'benchmark-ips'
   spec.add_development_dependency 'benchmark-memory'
+  spec.add_development_dependency 'bundler', '~> 2'
   spec.add_development_dependency 'pry', '~> 0.11'
   spec.add_development_dependency 'rack-test', '~> 0'
-  spec.add_development_dependency 'rake', '~> 12'
   spec.add_development_dependency 'railties', '~> 5.2'
+  spec.add_development_dependency 'rake', '~> 12'
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'rubocop', '~> 0.61'
+  spec.add_development_dependency 'sequel', '~> 5'
+  spec.add_development_dependency 'sqlite3', '~> 1'
   spec.add_development_dependency 'yard', '~> 0.9'
 
   spec.add_dependency 'rack', '>= 1.6', '< 3'

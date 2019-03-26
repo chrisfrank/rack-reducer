@@ -18,7 +18,7 @@ module Rack
       # @param [Hash, ActionController::Parameters, Object] params
       #   a Rack-compatible params hash
       # @return filtered data
-      def call(params)
+      def apply(params)
         symbolized_params = params.to_unsafe_h.symbolize_keys
         @filters.reduce(@dataset) do |data, filter|
           next data unless filter.satisfies?(symbolized_params)
