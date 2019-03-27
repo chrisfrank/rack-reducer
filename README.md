@@ -200,7 +200,24 @@ end
 
 Calling Rack::Reducer as a function
 -------------------------------------------
-TODO
+For a slight performance penalty (~5%), you can skip creating a reducer via
+`::create` and just call Rack::Reducer as a function. This can be useful when
+prototyping, mostly because you don't need to think about naming anything.
+
+```ruby
+# app/controllers/artists_controller.rb
+class ArtistsController < ApplicationController
+  # Step 1: there is no step 2
+  def index
+    @artists = Rack::Reducer.call(params, dataset: Artist.all, filters: [
+      ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
+      ->(genre:) { where(genre: genre) },
+    ])
+    render json: @artists
+  end
+end
+```
+
 
 How Rack::Reducer Works
 --------------------------------------

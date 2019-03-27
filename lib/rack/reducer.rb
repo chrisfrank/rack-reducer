@@ -2,11 +2,12 @@
 
 require_relative 'reducer/reduction'
 require_relative 'reducer/middleware'
+require_relative 'reducer/warnings'
 
 module Rack
-  # Use request params to apply filters to a dataset
+  # Declaratively filter data via URL params, in any Rack app.
   module Reducer
-    # Create a Reduction object that can filter a dataset via #apply
+    # Create a Reduction object that can filter +dataset+ via +#apply+.
     # @param [Object] dataset an ActiveRecord::Relation, Sequel::Dataset,
     #   or other class with chainable methods
     # @param [Array<Proc>] filters  An array of lambdas whose keyword arguments
@@ -52,12 +53,7 @@ module Rack
     #   To mount middleware that will still work in 2.0, write
     #   "use Rack::Reducer::Middleware" instead of "use Rack::Reducer"
     def self.new(app, options = {})
-      warn <<~WARNING
-        #{caller(1..1).first}:
-        Rack::Reducer.new will become an alias of ::create in v2.0.
-        To mount middleware that will still work in 2.0, write
-        "use Rack::Reducer::Middleware" instead of "use Rack::Reducer"
-      WARNING
+      warn "#{caller(1..1).first}}\n#{Warnings[:new]}"
       Middleware.new(app, options)
     end
 
@@ -81,15 +77,7 @@ module Rack
     #     end
     #     MyModel::MyReducer.call(params)
     def reduces(dataset, filters:)
-      warn <<~WARNING
-        #{caller(1..1).first}:
-        Rack::Reducer's mixin-style is deprecated and may be removed in 2.0.
-        To keep using Rack::Reducer in your models, create a Reducer constant.
-        class MyModel
-          MyReducer = Rack::Reducer.create(dataset, *filter_functions)
-        end
-        MyModel::MyReducer.call(params)
-      WARNING
+      warn "#{caller(1..1).first}}\n#{Warnings[:reduces]}"
       reducer = Reduction.new(dataset, *filters)
       define_singleton_method :reduce do |params|
         reducer.apply(params)
