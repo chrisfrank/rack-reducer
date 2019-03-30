@@ -118,7 +118,7 @@ ARTISTS = [
 ]
 
 app = Rack::Builder.new do
-  # dataset  is a hash, so filter functions use ruby hash methods
+  # dataset is an Array, so filter functions use Array methods
   use Rack::Reducer::Middleware, dataset: ARTISTS, filters: [
     ->(genre:) { select { |item| item[:genre].match(/#{genre}/i) } },
     ->(name:) { select { |item| item[:name].match(/#{name}/i) } },
@@ -143,7 +143,7 @@ use Rack::Reducer::Midleware, key: 'custom.key', dataset: ARTISTS, filters: [
 
 ### With Rails scopes
 The Rails [quickstart example](#use) created a reducer inside a
-controller, but if your filters use lots of ActiveRecord `scope`s, it might make
+controller, but if your filters use lots of ActiveRecord scopes, it might make
 more sense to keep your reducers in your models instead.
 
 ```ruby
