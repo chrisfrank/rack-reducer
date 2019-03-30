@@ -4,8 +4,8 @@ Layout/LeadingCommentSpace:
   Enabled: false
 Metrics/BlockLength:
   Enabled: false
-Style/FrozenStringLiteralComment:
-  EnforcedStyle: never
+Metrics/MethodLength:
+  Enabled: false
 Style/AsciiComments:
   Enabled: false
   StyleGuide: http://relaxed.ruby.style/#styleasciicomments

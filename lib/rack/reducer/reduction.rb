@@ -1,5 +1,6 @@
+# frozen_string_literal: true
+
 require_relative 'refinements'
-require_relative 'parser'
 
 module Rack
   module Reducer
@@ -8,26 +9,28 @@ module Rack
     class Reduction
       using Refinements # define Proc#required_argument_names, #satisfies?, etc
 
-      DEFAULTS = {
-        dataset: [],
-        filters: [],
-        params: nil
-      }.freeze
-
-      def initialize(options)
-        @props = DEFAULTS.merge(options)
-        @params = Parser.call(@props[:params])
+      def initialize(dataset, *filters)
+        @dataset = dataset
+        @filters = filters
       end
 
-      def reduce
-        @props[:filters].reduce(@props[:dataset]) do |data, filter|
-          next data unless filter.satisfies?(@params)
+      # Run +@filters+ against the params argument
+      # @param [Hash, ActionController::Parameters, nil] params
+      #   a Rack-compatible params hash
+      # @return +@dataset+ with the matching filters applied
+      def apply(params)
+        return @dataset if !params || params.empty?
 
-          data.instance_exec(@params.slice(*filter.all_argument_names), &filter)
+        symbolized_params = params.to_unsafe_h.symbolize_keys
+        @filters.reduce(@dataset) do |data, filter|
+          next data unless filter.satisfies?(symbolized_params)
+
+          data.instance_exec(
+            **symbolized_params.slice(*filter.all_argument_names),
+            &filter
+          )
         end
       end
     end
-
-    private_constant :Reduction
   end
 end

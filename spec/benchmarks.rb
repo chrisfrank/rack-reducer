@@ -1,40 +1,70 @@
-require_relative 'spec_helper'
-require 'sinatra/base'
+require 'rack'
+require 'pry'
 require 'json'
+require_relative '../lib/rack/reducer'
 require 'benchmark/ips'
+require_relative 'fixtures'
+require 'sequel'
 
-Conditionals = lambda do |params = {}|
-  @artists = DB[:artists]
-  if (genre = params[:genre])
-    @artists = @artists.grep(:genre, "%#{genre}%", case_insensitive: true)
+DB = Sequel.sqlite.tap do |db|
+  db.create_table(:artists) do
+    primary_key :id
+    String :name
+    String :genre
+    Integer :release_count
   end
-  if (name = params[:name])
+  Fixtures::DB[:artists].each { |row| db[:artists].insert(row) }
+end
+
+conditional_app = lambda do |env|
+  params = Rack::Request.new(env).params
+  @artists = DB[:artists]
+  if (genre = params['genre'])
+    @artists = @artists.where(genre: genre.to_s)
+  end
+  if (name = params['name'])
     @artists = @artists.grep(:name, "%#{name}%", case_insensitive: true)
   end
-
-  @artists.to_json
+  Rack::Response.new(@artists).finish
 end
 
-Reduction = lambda do |params = {}|
-  @artists = Rack::Reducer.call(params, dataset: DB[:artists], filters: [
-    ->(genre:) { grep(:genre, "%#{genre}%", case_insensitive: true) },
-    ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-  ])
+TestReducer = Rack::Reducer.create(
+  DB[:artists],
+  ->(genre:) { where(genre: genre.to_s) },
+  ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
+)
 
-  @artists.to_json
+reducer_app = lambda do |env|
+  params = Rack::Request.new(env).params
+  @artists = TestReducer.apply(params)
+  Rack::Response.new(@artists).finish
 end
 
-Benchmark.ips(3) do |bm|
-  bm.report('conditionals, empty params') { Conditionals.call }
+Benchmark.ips do |bm|
+  env = {
+    'REQUEST_METHOD' => 'GET',
+    'PATH_INFO' => '/',
+    'rack.input' => StringIO.new('')
+  }
 
-  bm.report('reduction, empty params') { Reduction.call }
+  query = {
+    'QUERY_STRING' => 'name=blake&genre=electronic',
+  }
 
-  bm.report('conditionals, full params') do
-    Conditionals.call({ name: 'blake', genre: 'electric' })
+  bm.report('Conditionals (full)') do
+    conditional_app.call env.merge(query)
   end
 
-  bm.report('reduction, full params') do
-    Reduction.call({ name: 'blake', genre: 'electric' })
+  bm.report('Reducer (full)') do
+    reducer_app.call env.merge(query)
+  end
+
+  bm.report('Conditionals (empty)') do
+    conditional_app.call env.dup
+  end
+
+  bm.report('Reducer (empty)') do
+    reducer_app.call env.dup
   end
 
   bm.compare!

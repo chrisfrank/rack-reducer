@@ -7,30 +7,28 @@ Gem::Specification.new do |spec|
   spec.version       = Rack::Reducer::VERSION
   spec.authors       = ['Chris Frank']
   spec.email         = ['chris.frank@future.com']
-  spec.summary       = 'Dynamically filter data via URL params, in any Rack app.'
-  spec.description   = 'Dynamically filter, sort, and paginate data via URL params, in any Rack app.'
+  spec.summary       = 'Declaratively filter data via URL params, in any Rack app.'
+  spec.description   = 'Declaratively filter data via URL params, in any Rack app.'
   spec.homepage      = 'https://github.com/chrisfrank/rack-reducer'
   spec.license       = 'MIT'
   spec.files         = Dir['README.md', 'lib/**/*']
   spec.test_files    = Dir['spec/**/*.rb']
   spec.require_path  = 'lib'
 
-  spec.add_development_dependency 'bundler', '~> 1.16'
-  spec.add_development_dependency 'benchmark-ips', '~> 2.7'
+  spec.add_development_dependency 'actionpack', '~> 5.2'
+  spec.add_development_dependency 'benchmark-ips'
+  spec.add_development_dependency 'benchmark-memory'
+  spec.add_development_dependency 'bundler', '~> 2'
   spec.add_development_dependency 'pry', '~> 0.11'
-  spec.add_development_dependency 'hanami', '~> 1'
-  spec.add_development_dependency 'hanami-model', '~> 1'
   spec.add_development_dependency 'rack-test', '~> 0'
-  spec.add_development_dependency 'rails', '~> 5'
+  spec.add_development_dependency 'railties', '~> 5.2'
   spec.add_development_dependency 'rake', '~> 12'
-  spec.add_development_dependency 'roda', '~> 3'
   spec.add_development_dependency 'rspec', '~> 3'
   spec.add_development_dependency 'rubocop', '~> 0.61'
-  spec.add_development_dependency 'sequel', '~> 4'
-  spec.add_development_dependency 'sinatra', '~> 2'
+  spec.add_development_dependency 'sequel', '~> 5'
   spec.add_development_dependency 'sqlite3', '~> 1'
   spec.add_development_dependency 'yard', '~> 0.9'
 
   spec.add_dependency 'rack', '>= 1.6', '< 3'
-  spec.required_ruby_version = '>= 2.2'
+  spec.required_ruby_version = '>= 2.3'
 end

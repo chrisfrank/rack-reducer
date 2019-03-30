@@ -3,15 +3,7 @@ Rack::Reducer
 [![Build Status](https://travis-ci.org/chrisfrank/rack-reducer.svg?branch=master)](https://travis-ci.org/chrisfrank/rack-reducer)
 [![Maintainability](https://api.codeclimate.com/v1/badges/675e7a654c7e11c24b9f/maintainability)](https://codeclimate.com/github/chrisfrank/rack-reducer/maintainability)
 
-Dynamically filter and sort data via URL params, with controller logic as
-succint as
-
-```ruby
-@artists = Artist.reduce(params)
-```
-
-Rack::Reducer works in any Rack-compatible app, with any ORM, and has no
-dependencies beyond Rack itself.
+Declaratively filter data via URL params, in any Rack app, with any ORM.
 
 Install
 ------------------------------------------
@@ -21,85 +13,45 @@ Add `rack-reducer` to your Gemfile:
 gem 'rack-reducer', require: 'rack/reducer'
 ```
 
+Rack::Reducer has zero dependencies beyond Rack itself.
+
 Use
 ------------------------------------------
 If your app needs to render a list of database records, you probably want those
 records to be filterable via URL params, like so:
 
 ```
-GET /artists?name=blake` => artists named 'blake'
-GET /artists?genre=electronic&sort=name => electronic artists, sorted by name
 GET /artists => all artists
+GET /artists?name=blake` => artists named 'blake'
+GET /artists?genre=electronic&name=blake => electronic artists named 'blake'
 ```
 
-You _could_ conditionally apply filters with hand-written `if` statements, but
-that approach gets uglier the more filters you have.
-
-Rack::Reducer can help. It maps incoming URL params to an array of filter
-functions you define, applies only the applicable filters, and returns your
-filtered data.
-
-You can use Rack::Reducer in your choice of two styles: **mixin** or
-**functional**.
-
-### Mixin style
-Call `Model.reduce(params)` in your controllers...
+Rack::Reducer can help. It applies incoming URL params to an array of filter
+functions you define, runs only the relevant filters, and returns your filtered
+data. Here’s how you might use it in a Rails controller:
 
 ```ruby
 # app/controllers/artists_controller.rb
 class ArtistsController < ApplicationController
-  def index
-    @artists = Artist.reduce(params)
-    render json: @artists
-  end
-end
-```
-
-...and `extend Rack::Reducer` in your models:
-
-```ruby
-# app/models/artist.rb
-class Artist < ActiveRecord::Base
-  extend Rack::Reducer
-
-  # Configure by calling
-  # `reduces(some_initial_scope, filters: [an, array, of, lambdas])`
-  #
-  # Filters can use any methods your initial dataset understands,
-  # in this case Artist class methods and scopes
-  reduces self.all, filters: [
+  # Step 1: Create a reducer
+  ArtistReducer = Rack::Reducer.create(
+    Artist.all,
     ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
     ->(genre:) { where(genre: genre) },
-    ->(sort:) { order(sort.to_sym) },
-  ]
-end
-```
+  )
 
-### Functional style
-Call Rack::Reducer as a function, maybe right in your controllers, maybe in
-a dedicated [query object][query_obj], or really anywhere you like:
-
-```ruby
-# app/controllers/artists_controller.rb
-class ArtistsController < ApplicationController
+  # Step 2: Apply the reducer to incoming requests
   def index
-    @artists = Rack::Reducer.call(params, dataset: Artist.all, filters: [
-      ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
-      ->(genre:) { where(genre: genre) },
-      ->(sort:) { order(sort.to_sym) },
-    ])
+    @artists = ArtistReducer.apply(params)
     render json: @artists
   end
 end
 ```
 
-The mixin style is stylistically Railsier. The functional style is more
-flexible. Both styles are supported, tested, and handle requests identically.
-
-In the examples above:
+This example app would handle requests as follows:
 
 ```ruby
-# GET /artists returns all artists, e.g.
+# GET /artists => All artists:
 [
   { "name": "Blake Mills", "genre": "alternative" },
   { "name": "Björk", "genre": "electronic" },
@@ -108,16 +60,15 @@ In the examples above:
   { "name": "SZA", "genre": "alt-soul" }
 ]
 
-# GET /artists?name=blake returns artists named 'blake',  e.g.
+# GET /artists?name=blake => Artists named "blake":
 [
   { "name": "Blake Mills", "genre": "alternative" },
   { "name": "James Blake", "genre": "electronic" }
 ]
 
-# GET /artists?name=blake&genre=electronic returns e.g.
+# GET /artists?name=blake&genre=electronic => Electronic artists named "blake"
 [{ "name": "James Blake", "genre": "electronic" }]
 ```
-
 
 Framework-specific Examples
 ---------------------------
@@ -125,62 +76,32 @@ These examples apply Rack::Reducer in different frameworks and ORMs. The
 pairings of ORMs and frameworks are arbitrary, just to demonstrate a few
 possible stacks.
 
-- [Sinatra/Sequel](#sinatrasequel)
-- [Rack Middleware/Ruby Hash](#rack-middlewarehash)
-- [Roda](#roda)
-- [Hanami](#hanami)
-- [Advanced use in Rails and other frameworks](#advanced-use-in-rails-and-other-frameworks)
-
 ### Sinatra/Sequel
 This example uses [Sinatra][sinatra] to handle requests, and [Sequel][sequel]
 as an ORM.
 
-#### Functional-style
 ```ruby
 # sinatra_functional_style.rb
-class SinatraFunctionalApp < Sinatra::Base
+class SinatraExample < Sinatra::Base
   DB = Sequel.connect ENV['DATABASE_URL']
 
   # dataset is a Sequel::Dataset, so filters use Sequel query methods
-  QUERY = {
-    dataset: DB[:artists],
-    filters: [
-      ->(genre:) { where(genre: genre) },
-      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(sort:) { order(sort.to_sym) },
-    ]
-  }
+  ArtistReducer = Rack::Reducer.create(
+    DB[:artists],
+    ->(genre:) { where(genre: genre) },
+    ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
+  )
 
   get '/artists' do
-    @artists = Rack::Reducer.call(params, QUERY)
-    @artists.to_a.to_json
+    @artists = ArtistReducer.apply(params).all
+    @artists.to_json
   end
 end
 ```
 
-#### Mixin-style
-```ruby
-# sintra_mixin_style.rb
-class SinatraMixinApp < Sinatra::Base
-  class Artist < Sequel::Model
-    extend Rack::Reducer
-    reduces self.dataset, filters: [
-      ->(genre:) { where(genre: genre) },
-      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(sort:) { order(sort.to_sym) },
-    ]
-  end
-
-  get '/artists' do
-    @artists = Artist.reduce(params)
-    @artists.to_a.to_json
-  end
-end
-```
-
-### Rack Middleware/Hash
+### Rack Middleware/Ruby Array
 This example runs a raw Rack app with Rack::Reducer mounted as middleware.
-It doesn't use an ORM at all -- it just stores data in a ruby hash.
+It doesn't use an ORM at all -- it just stores data in a ruby array.
 
 ```ruby
 # config.ru
@@ -198,7 +119,7 @@ ARTISTS = [
 
 app = Rack::Builder.new do
   # dataset  is a hash, so filter functions use ruby hash methods
-  use Rack::Reducer, dataset: ARTISTS, filters: [
+  use Rack::Reducer::Middleware, dataset: ARTISTS, filters: [
     ->(genre:) { select { |item| item[:genre].match(/#{genre}/i) } },
     ->(name:) { select { |item| item[:name].match(/#{name}/i) } },
     ->(sort:) { sort_by { |item| item[sort.to_sym] } },
@@ -215,133 +136,23 @@ change the `env` key by passing a new name as option to `use`:
 
 ```ruby
 # config.ru
-use Rack::Reducer, key: 'myapp.custom_key', dataset: ARTISTS, filters: [
-  #an array of lambdas
+use Rack::Reducer::Midleware, key: 'custom.key', dataset: ARTISTS, filters: [
+  # an array of lambdas
 ]
 ```
 
-### Roda
-This example uses [Roda][roda] to handle requests, and [Sequel][sequel] as an
-ORM.
-
-```ruby
-# app.rb
-require 'roda'
-require 'sequel'
-
-class App < Roda
-  plugin :json
-
-  DB = Sequel.connect ENV['DATABASE_URL']
-
-  QUERY = {
-    dataset: DB[:artists],
-    filters: [
-      ->(genre:) { where(genre: genre) },
-      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(sort:) { order(sort.to_sym) },
-    ]
-  }
-  # Note that QUERY[:dataset] is a Sequel::Dataset, so the functions 
-  # in QUERY[:filters] use Sequel methods
-
-  route do |r|
-    r.get('artists') { Rack::Reducer.call(r.params, QUERY).to_a }
-  end
-end
-```
-
-### Hanami
-This example uses [Hanami][hanami] to handle requests, and hanami-model as an
-ORM.
-
-```ruby
-# apps/web/controllers/artists/index.rb
-module Web::Controllers::Artists
-  class Index
-    include Web::Action
-
-    def call(params)
-      @artists = ArtistRepository.new.reduce(params)
-      self.body = @artists.to_a.to_json
-    end
-  end
-end
-
-# lib/app_name/repositories/artist_repository.rb
-class ArtistRepository < Hanami::Repository
-  def reduce(params)
-    Rack::Reducer.call(params, dataset: artists.dataset, filters: [
-      ->(genre:) { where(genre: genre) },
-      ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
-      ->(sort:) { order(sort.to_sym) },
-    ])
-  end
-end
-```
-
-### Advanced use in Rails and other frameworks
-The examples in the [introduction](#use) cover basic Rails use. The examples
-below cover more advanced use.
-
-If you're comfortable in a non-Rails stack, you can apply these advanced
-techniques there too.
-
-#### Default filters
-Most of the time it makes sense to use *required* keyword arguments for each
-filter, and skip running the filter altogether when the keyword argments aren't
-present.
-
-But you may want to run a filter always, with a sensible default when the params
-don't specify a value. Ordering results is a common case.
-
-The code below will order by `params[:sort]` when it exists, and by name
-otherwise.
-
-```ruby
-# app/controllers/artists_controller.rb
-class ArtistsController < ApplicationController
-  def index
-    @artists = Rack::Reducer.call(params, dataset: Artist.all, filters: [
-      ->(genre:) { where(genre: genre) },
-      ->(sort: 'name') { order(sort.to_sym) }
-    ])
-    render json: @artists
-  end
-end
-```
-
-#### Dynamically setting Reducer's initial dataset
-Rack::Reducer's mixin style only lets you target one initial dataset for
-reduction. If you need different initial datasets in different contexts, use
-the functional style:
-
-```ruby
-# app/controllers/artists_controller.rb
-class ArtistsController < ApplicationController
-  def index
-    @scope = current_user.admin? ? Artist.all : Artist.signed
-    @artists = Rack::Reducer.call(params, dataset: @scope, filters: [
-      ->(name:) { by_name(name) },
-      ->(genre:) { where(genre: genre) },
-      ->(sort:) { order(sort.to_sym) }
-    ])
-    render json: @artists
-  end
-end
-```
-
-#### Chaining reduce with other ActiveRecord query methods
-In the mixin-style, you can chain `Model.reduce` with other ActiveRecord
-queries, as long as `reduce` is the first call in the chain:
+### With Rails scopes
+The Rails [quickstart example](#use) created a reducer inside a
+controller, but if your filters use lots of ActiveRecord `scope`s, it might make
+more sense to keep your reducers in your models instead.
 
 ```ruby
 # app/models/artist.rb
 class Artist < ApplicationRecord
-  extend Rack::Reducer
-  reduces self.all, filters: [
-    # filters get instance_exec'd against the initial dataset, 
-    # in this case `self.all`, so filters can use query methods, scopes, etc
+  # filters get instance_exec'd against the dataset you provide -- in this case
+  # it's `self.all` -- so filters can use query methods, scopes, etc
+  Reducer = Rack::Reducer.create(
+    self.all,
     ->(name:) { by_name(name) },
     ->(genre:) { where(genre: genre) },
     ->(sort:) { order(sort.to_sym) }
@@ -350,26 +161,67 @@ class Artist < ApplicationRecord
   scope :by_name, lambda { |name|
     where('lower(name) like ?', "%#{name.downcase}%")
   }
-
-  # here's a scope we're not using in our Reducer filters,
-  # but will use in our controller
-  scope :signed, lambda { where(signed: true) }
 end
 
 # app/controllers/artists_controller.rb
 class ArtistsController < ApplicationController
   def index
-    # you can chain reduce with other ActiveRecord queries,
-    # as long as reduce is first in the chain
-    @artists = Artist.reduce(params).signed
+    @artists = Artist::Reducer.apply(params)
     render json: @artists
   end
 end
 ```
 
+Default filters
+------------------------------------------
+Most of the time it makes sense to use *required* keyword arguments for each
+filter, and skip running the filter altogether when the keyword argments aren't
+present.
+
+But sometimes you'll want to run a filter with a default value, even when the
+required params are missing.  The code below will order by `params[:sort]` when
+it exists, and by name otherwise.
+
+```ruby
+# app/controllers/artists_controller.rb
+class ArtistsController < ApplicationController
+  ArtistReducer = Rack::Reducer.create(
+    Artist.all,
+    ->(genre:) { where(genre: genre) },
+    ->(sort: 'name') { order(sort.to_sym) }
+  )
+
+  def index
+    @artists = ArtistReducer.apply(params)
+    render json: @artists
+  end
+end
+```
+
+Calling Rack::Reducer as a function
+-------------------------------------------
+For a slight performance penalty (~5%), you can skip creating a reducer via
+`::create` and just call Rack::Reducer as a function. This can be useful when
+prototyping, mostly because you don't need to think about naming anything.
+
+```ruby
+# app/controllers/artists_controller.rb
+class ArtistsController < ApplicationController
+  # Step 1: there is no step 2
+  def index
+    @artists = Rack::Reducer.call(params, dataset: Artist.all, filters: [
+      ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
+      ->(genre:) { where(genre: genre) },
+    ])
+    render json: @artists
+  end
+end
+```
+
+
 How Rack::Reducer Works
 --------------------------------------
-Rack::Reducer takes a dataset, a params hash, and an array of lambda functions.
+Rack::Reducer takes a dataset, an array of lambdas, and a params hash.
 
 To return filtered data, it calls Enumerable#[reduce][reduce] on your array of
 lambdas, with the reduction's initial value set to `dataset`.
@@ -387,42 +239,53 @@ filter functions. Reducer doesn't need to know anything about ActiveRecord,
 Sequel, Mongoid, etc -- it just `instance_exec`s your own code against your
 own dataset.
 
-### Security
-Rack::Reducer claims to "safely" map URL params to filters, but it accepts an
-unfiltered params hash. What gives?
+Performance
+---------------------
+For requests with empty params, Rack::Reducer has no measurable performance
+impact. For requests with populated params, Rack::Reducer is about 10% slower
+than a set of hand-coded conditionals, according to `spec/benchmarks.rb`.
 
-By using keyword arguments in your filter lambdas, you are explicitly naming
-the params you'll accept into your filters. Params that aren't keywords never 
-get evaluated.
+```
+ Conditionals (full)   530.000  i/100ms
+      Reducer (full)   432.000  i/100ms
+Conditionals (empty)   780.000  i/100ms
+     Reducer (empty)   808.000  i/100ms
+Calculating -------------------------------------
+ Conditionals (full)      4.864k (± 2.3%) i/s -     24.380k in   5.015551s
+      Reducer (full)      4.384k (± 1.3%) i/s -     22.032k in   5.026651s
+Conditionals (empty)      7.889k (± 1.7%) i/s -     39.780k in   5.043797s
+     Reducer (empty)      8.129k (± 1.7%) i/s -     41.208k in   5.070453s
 
-For extra safety, you can typecast the params in your filters. Many ORMs
-handle this for you, but as an example:
-
-```ruby
-FILTERS = [
-  # typecast params[:name] to a string
-  ->(name:) { where(name: name.to_s) },
-  # typecast params[:updated_before] and params[:updated_after]
-  # to times, and set a default for updated_after if it's missing
-  lambda |updated_before:, updated_after: 1.month.ago| {
-    where(updated_at: updated_after.to_time..updated_before.to_time)
-  }
-]
+Comparison:
+     Reducer (empty):     8129.5 i/s
+Conditionals (empty):     7889.3 i/s - same-ish: difference falls within error
+ Conditionals (full):     4863.7 i/s - 1.67x  slower
+      Reducer (full):     4383.8 i/s - 1.85x  slower
 ```
 
-### Performance
-According to `spec/benchmarks.rb`, Rack::Reducer executes about 90% as quickly
-as a set of hard-coded conditional filters. It is unlikely to be a
-bottleneck in your application.
+In Rails, note that `params` is never empty, so use `request.query_parameters`
+instead if you want to handle parameterless requests at top speed.
+
+```ruby
+# app/controllers/artists_controller.rb
+class ArtistController < ApplicationController
+  # ArtistReducer = Rack::Reducer.create(...etc etc)
+
+  def index
+    @artists = ArtistReducer.apply(request.query_parameters)
+    render json: @artists
+  end
+end
+```
 
 Alternatives
 -------------------
 If you're working in Rails, Plataformatec's excellent [HasScope][has_scope] has
-been solving this problem since 2009. I prefer keeping my query logic all in one
-place, though, instead of spreading it across my controllers and models.
+been solving this problem since 2009. I prefer keeping my request logic all in
+one place, though, instead of spreading it across my controllers and models.
 
-[Periscope][periscope], by laserlemon, seems like another good Rails option, and
-though it's Rails only, it supports more than just ActiveRecord.
+[Periscope][periscope], by Steve Richert, seems like another solid Rails option.
+It is Rails-only, but it supports more than just ActiveRecord.
 
 For Sinatra, Simon Courtois has a [Sinatra port of has_scope][sin_has_scope].
 It depends on ActiveRecord.
@@ -434,7 +297,7 @@ Please open [an issue](https://github.com/chrisfrank/rack-reducer/issues) on
 Github.
 
 ### Pull Requests
-Please include tests, following the style of the specs in `spec/*_spec.rb`.
+PRs are welcome, and I'll do my best to review them promptly.
 
 License
 ----------
@@ -454,9 +317,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 [sin_has_scope]: https://github.com/simonc/sinatra-has_scope
 [sinatra]: https://github.com/sinatra/sinatra
 [sequel]: https://github.com/jeremyevans/sequel
-[roda]: https://github.com/jeremyevans/roda
 [reduce]: http://ruby-doc.org/core-2.5.0/Enumerable.html#method-i-reduce
 [keywords]: https://robots.thoughtbot.com/ruby-2-keyword-arguments
-[query_obj]: https://robots.thoughtbot.com/using-yieldself-for-composable-activerecord-relations
 [periscope]: https://github.com/laserlemon/periscope
-[hanami]: http://hanamirb.org
