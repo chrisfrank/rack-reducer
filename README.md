@@ -13,7 +13,7 @@ Add `rack-reducer` to your Gemfile:
 gem 'rack-reducer', require: 'rack/reducer'
 ```
 
-Rack::Reducer has zero dependencies beyond Rack itself.
+Rack::Reducer has no dependencies beyond Rack itself.
 
 Use
 ------------------------------------------
@@ -33,6 +33,7 @@ data. Here’s how you might use it in a Rails controller:
 ```ruby
 # app/controllers/artists_controller.rb
 class ArtistsController < ApplicationController
+
   # Step 1: Create a reducer
   ArtistReducer = Rack::Reducer.create(
     Artist.all,
@@ -70,6 +71,10 @@ This example app would handle requests as follows:
 [{ "name": "James Blake", "genre": "electronic" }]
 ```
 
+API Documentation
+---------------------------
+https://www.rubydoc.info/gems/rack-reducer
+
 Framework-specific Examples
 ---------------------------
 These examples apply Rack::Reducer in different frameworks and ORMs. The
@@ -81,7 +86,7 @@ This example uses [Sinatra][sinatra] to handle requests, and [Sequel][sequel]
 as an ORM.
 
 ```ruby
-# sinatra_functional_style.rb
+# config.ru
 class SinatraExample < Sinatra::Base
   DB = Sequel.connect ENV['DATABASE_URL']
 
@@ -135,7 +140,6 @@ env['rack.reduction'], then calls the next app in the middleware stack. You can
 change the `env` key by passing a new name as option to `use`:
 
 ```ruby
-# config.ru
 use Rack::Reducer::Midleware, key: 'custom.key', dataset: ARTISTS, filters: [
   # an array of lambdas
 ]
@@ -179,11 +183,10 @@ filter, and skip running the filter altogether when the keyword argments aren't
 present.
 
 But sometimes you'll want to run a filter with a default value, even when the
-required params are missing.  The code below will order by `params[:sort]` when
+required params are missing. The code below will order by `params[:sort]` when
 it exists, and by name otherwise.
 
 ```ruby
-# app/controllers/artists_controller.rb
 class ArtistsController < ApplicationController
   ArtistReducer = Rack::Reducer.create(
     Artist.all,
@@ -217,7 +220,6 @@ class ArtistsController < ApplicationController
   end
 end
 ```
-
 
 How Rack::Reducer Works
 --------------------------------------
