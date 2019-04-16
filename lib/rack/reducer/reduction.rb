@@ -12,7 +12,9 @@ module Rack
       def initialize(dataset, *filters)
         @dataset = dataset
         @filters = filters
-        @default_filters = filters.select{|filter| filter.required_argument_names.empty?}
+        @default_filters = filters.select do |filter|
+          filter.required_argument_names.empty?
+        end
       end
 
       # Run +@filters+ against the params argument
@@ -22,8 +24,9 @@ module Rack
       def apply(params)
         if !params || params.empty?
           return @dataset if @default_filters.empty?
+
           filters = @default_filters
-          symbolized_params = Hash.new
+          symbolized_params = {}
         else
           filters = @filters
           symbolized_params = params.to_unsafe_h.symbolize_keys
