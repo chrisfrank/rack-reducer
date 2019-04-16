@@ -71,7 +71,7 @@ RSpec.describe Rack::Reducer do
     end
   end
 
-  it 'can sort' do
+  it 'can override default params' do
     get '/artists?sort=genre' do |response|
       genre = response.json[0]['genre']
       expect(genre).to eq('alt-soul')
