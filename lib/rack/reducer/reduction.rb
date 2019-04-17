@@ -22,9 +22,9 @@ module Rack
       #   a Rack-compatible params hash
       # @return +@dataset+ with the matching filters applied
       def apply(params)
-        return @dataset if !params.present? && @default_filters.empty?
+        if !params || params.empty?
+          return @dataset if @default_filters.empty?
 
-        if !params.present?
           filters = @default_filters
           symbolized_params = {}
         else
