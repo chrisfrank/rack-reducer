@@ -17,7 +17,7 @@ module Fixtures
     ->(name:) {
       select { |item| item[:name].match(/#{name}/i) }
     },
-    ->(sort:) {
+    ->(sort: 'name') {
       sort_by { |item| item[sort.to_sym] }
     },
     ->(releases:) {

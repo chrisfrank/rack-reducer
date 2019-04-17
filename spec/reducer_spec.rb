@@ -64,10 +64,17 @@ RSpec.describe Rack::Reducer do
     expect(Fixtures::ArtistReducer.apply(nil)).to be_truthy
   end
 
-  it 'can sort' do
-    get '/artists?order=genre' do |response|
+  it 'applies default filters' do
+    get '/artists' do |response|
+      name = response.json[0]['name']
+      expect(name).to eq('Björk')
+    end
+  end
+
+  it 'can override default params' do
+    get '/artists?sort=genre' do |response|
       genre = response.json[0]['genre']
-      expect(genre).to eq('alternative')
+      expect(genre).to eq('alt-soul')
     end
   end
 
