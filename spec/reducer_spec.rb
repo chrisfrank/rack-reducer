@@ -108,4 +108,10 @@ RSpec.describe Rack::Reducer do
       expect(@warnings.first).to include('mixin-style is deprecated')
     end
   end
+
+  it 'accepts nested params' do
+    get('/artists?range[min]=1&range[max]=100') do |response|
+      expect(response.status).to eq(200)
+    end
+  end
 end
