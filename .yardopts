@@ -1,0 +1,6 @@
+--readme README.md
+--title 'Rack::Reducer API Documentation'
+--charset utf-8
+--markup markdown
+lib/rack/reducer/middleware.rb
+lib/rack/reducer.rb

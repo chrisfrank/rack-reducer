@@ -17,14 +17,11 @@ module Fixtures
     ->(name:) {
       select { |item| item[:name].match(/#{name}/i) }
     },
-    ->(sort: 'name') {
-      sort_by { |item| item[sort.to_sym] }
-    },
     ->(releases:) {
       select { |item| item[:release_count].to_i == releases.to_i }
     },
   ]
 
-  ArtistReducer = Rack::Reducer.create(DB[:artists], *FILTERS)
+  ArtistReducer = Rack::Reducer.new(DB[:artists], *FILTERS)
 end
 

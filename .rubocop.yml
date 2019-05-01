@@ -23,3 +23,6 @@ Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: consistent_comma
 Style/Documentation:
   Enabled: false
+Style/ParallelAssignment:
+  Enabled: false
+

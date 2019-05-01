@@ -34,8 +34,8 @@ data. Here’s how you might use it in a Rails controller:
 # app/controllers/artists_controller.rb
 class ArtistsController < ApplicationController
 
-  # Step 1: Create a reducer
-  ArtistReducer = Rack::Reducer.create(
+  # Step 1: Instantiate a reducer
+  ArtistReducer = Rack::Reducer.new(
     Artist.all,
     ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
     ->(genre:) { where(genre: genre) },
@@ -91,7 +91,7 @@ class SinatraExample < Sinatra::Base
   DB = Sequel.connect ENV['DATABASE_URL']
 
   # dataset is a Sequel::Dataset, so filters use Sequel query methods
-  ArtistReducer = Rack::Reducer.create(
+  ArtistReducer = Rack::Reducer.new(
     DB[:artists],
     ->(genre:) { where(genre: genre) },
     ->(name:) { grep(:name, "%#{name}%", case_insensitive: true) },
@@ -155,7 +155,7 @@ more sense to keep your reducers in your models instead.
 class Artist < ApplicationRecord
   # filters get instance_exec'd against the dataset you provide -- in this case
   # it's `self.all` -- so filters can use query methods, scopes, etc
-  Reducer = Rack::Reducer.create(
+  Reducer = Rack::Reducer.new(
     self.all,
     ->(name:) { by_name(name) },
     ->(genre:) { where(genre: genre) },
@@ -188,7 +188,7 @@ it exists, and by name otherwise.
 
 ```ruby
 class ArtistsController < ApplicationController
-  ArtistReducer = Rack::Reducer.create(
+  ArtistReducer = Rack::Reducer.new(
     Artist.all,
     ->(genre:) { where(genre: genre) },
     ->(sort: 'name') { order(sort.to_sym) }
@@ -203,8 +203,8 @@ end
 
 Calling Rack::Reducer as a function
 -------------------------------------------
-For a slight performance penalty (~5%), you can skip creating a reducer via
-`::create` and just call Rack::Reducer as a function. This can be useful when
+For a slight performance penalty (~5%), you can skip instantiating a reducer via
+`::new` and just call Rack::Reducer as a function. This can be useful when
 prototyping, mostly because you don't need to think about naming anything.
 
 ```ruby
@@ -271,7 +271,7 @@ instead if you want to handle parameterless requests at top speed.
 ```ruby
 # app/controllers/artists_controller.rb
 class ArtistController < ApplicationController
-  # ArtistReducer = Rack::Reducer.create(...etc etc)
+  # ArtistReducer = Rack::Reducer.new(...etc etc)
 
   def index
     @artists = ArtistReducer.apply(request.query_parameters)
@@ -291,6 +291,11 @@ It is Rails-only, but it supports more than just ActiveRecord.
 
 For Sinatra, Simon Courtois has a [Sinatra port of has_scope][sin_has_scope].
 It depends on ActiveRecord.
+
+Contributors
+---------------
+Thank you @danielpuglisi, @nicolasleger, @jeremyshearer, and @shanecav84 for
+helping improve Rack::Reducer!
 
 Contributing
 -------------------------------

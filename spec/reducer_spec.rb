@@ -1,7 +1,7 @@
 require 'spec_helper'
 require_relative 'fixtures'
 
-RSpec.describe Rack::Reducer do
+RSpec.describe 'Rack::Reducer' do
   using SpecRefinements
 
   let(:app) do
@@ -64,17 +64,31 @@ RSpec.describe Rack::Reducer do
     expect(Fixtures::ArtistReducer.apply(nil)).to be_truthy
   end
 
-  it 'applies default filters' do
-    get '/artists' do |response|
-      name = response.json[0]['name']
-      expect(name).to eq('Björk')
-    end
-  end
+  describe 'with default filters' do
+    let(:app) do
+      sort = ->(sort: 'name') { sort_by { |item| item[sort.to_sym] }  }
+      filters = Fixtures::FILTERS + [sort]
+      reducer = Rack::Reducer.new(Fixtures::DB[:artists], *filters)
 
-  it 'can override default params' do
-    get '/artists?sort=genre' do |response|
-      genre = response.json[0]['genre']
-      expect(genre).to eq('alt-soul')
+      lambda do |env|
+        req = Rack::Request.new(env)
+        res = reducer.apply(req.params).to_json
+        [200, { 'Content-Type' => 'application/json' }, [res]]
+      end
+    end
+
+    it 'applies default filters' do
+      get '/artists' do |response|
+        name = response.json[0]['name']
+        expect(name).to eq('Björk')
+      end
+    end
+
+    it 'overrides default filters with values from params' do
+      get '/artists?sort=genre' do |response|
+        genre = response.json[0]['genre']
+        expect(genre).to eq('alt-soul')
+      end
     end
   end
 
@@ -91,22 +105,8 @@ RSpec.describe Rack::Reducer do
     end
   end
 
-  describe 'mixin-style' do
-    before { @warnings = [] }
-
-    let(:model) do
-      dataset = Fixtures::DB[:artists].dup
-      allow(dataset).to(receive(:warn)) { |msg| @warnings << msg }
-      dataset.extend Rack::Reducer
-      dataset.reduces dataset, filters: Fixtures::FILTERS
-      dataset
-    end
-
-    it 'is still supported, but with a deprecation warning' do
-      params = { 'genre' => 'electronic', 'name' => 'blake' }
-      expect(model.reduce(params).count).to eq(1)
-      expect(@warnings.first).to include('mixin-style is deprecated')
-    end
+  it 'aliases ::create and ::new' do
+    expect(Rack::Reducer.create({}, -> { 'hi' })).to be_a(Rack::Reducer)
   end
 
   it 'accepts nested params' do

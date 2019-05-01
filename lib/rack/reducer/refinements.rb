@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Rack
-  module Reducer
-    # refine Proc and hash in this scope only
+  class Reducer
+    # Refine a few core classes in Rack::Reducer's scope only
     module Refinements
       refine Proc do
         def required_argument_names
@@ -36,6 +36,12 @@ module Rack
         end
 
         alias_method :to_unsafe_h, :to_h
+      end
+
+      refine NilClass do
+        def empty?
+          true
+        end
       end
     end
 

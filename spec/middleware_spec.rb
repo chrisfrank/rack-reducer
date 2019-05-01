@@ -4,10 +4,10 @@ require_relative 'fixtures'
 RSpec.describe Rack::Reducer::Middleware do
   using SpecRefinements
   module AppFactory
-    def self.create(key: nil, middleware_class: Rack::Reducer::Middleware)
+    def self.create(key: nil)
       Rack::Builder.new do
         use(
-          middleware_class,
+          Rack::Reducer::Middleware,
           dataset: Fixtures::DB[:artists],
           filters: Fixtures::FILTERS,
           key: key
@@ -42,22 +42,6 @@ RSpec.describe Rack::Reducer::Middleware do
       get('/') do |res|
         expect(res.json['custom_key'].class).to eq(Array)
       end
-    end
-  end
-
-  describe 'using Rack::Reducer instead of Rack::Reducer::Middleware' do
-    before do
-      @warnings = []
-      allow(Rack::Reducer).to receive(:warn) do |msg|
-        @warnings << msg
-      end
-    end
-
-    let(:app) { AppFactory.create(middleware_class: Rack::Reducer) }
-
-    it 'emits a deprecation warning' do
-      get('/')
-      expect(@warnings.last).to include('alias of ::create')
     end
   end
 end

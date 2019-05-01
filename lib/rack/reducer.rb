@@ -1,21 +1,32 @@
 # frozen_string_literal: true
 
-require_relative 'reducer/reduction'
+require_relative 'reducer/refinements'
 require_relative 'reducer/middleware'
-require_relative 'reducer/warnings'
 
 module Rack
-  # Declaratively filter data via URL params, in any Rack app.
-  module Reducer
-    # Create a Reduction object that can filter +dataset+ via +#apply+.
+  # Declaratively filter data via URL params, in any Rack app, with any ORM.
+  class Reducer
+    using Refinements
+
+    class << self
+      # make ::create an alias of ::new, for compatibility with v1
+      alias create new
+
+      # Call Rack::Reducer as a function instead of creating a named reducer
+      def call(params, dataset:, filters:)
+        new(dataset, *filters).apply(params)
+      end
+    end
+
+    # Instantiate a Reducer that can filter `dataset` via `#apply`.
     # @param [Object] dataset an ActiveRecord::Relation, Sequel::Dataset,
     #   or other class with chainable methods
     # @param [Array<Proc>] filters  An array of lambdas whose keyword arguments
     #   name the URL params you will use as filters
-    # @return Rack::Reducer::Reduction
     # @example Create a reducer and use it in a Sinatra app
     #   DB = Sequel.connect(ENV['DATABASE_URL'])
-    #   MyReducer = Rack::Reducer.create(
+    #
+    #   MyReducer = Rack::Reducer.new(
     #     DB[:artists],
     #     lambda { |name:| where(name: name) },
     #     lambda { |genre:| where(genre: genre) },
@@ -25,63 +36,47 @@ module Rack
     #     @artists = MyReducer.apply(params)
     #     @artists.to_json
     #   end
-    def self.create(dataset, *filters)
-      Reduction.new(dataset, *filters)
-    end
-
-    # Filter a dataset without creating a Reducer first.
-    # Note that this approach is a bit slower and less memory-efficient than
-    # creating a Reducer via ::create. Use ::create when you can.
-    #
-    # @param params [Hash] Rack-compatible URL params
-    # @param dataset [Object] A dataset, e.g. one of your App's models
-    # @param filters [Array<Proc>] An array of lambdas with keyword arguments
-    # @example Call Rack::Reducer as a function in a Sinatra app
-    #   get '/artists' do
-    #     @artists = Rack::Reducer.call(params, dataset: Artist.all, filters: [
-    #       lambda { |name:| where(name: name) },
-    #       lambda { |genre:| where(genre: genre) },
-    #     ])
-    #   end
-    def self.call(params, dataset:, filters:)
-      Reduction.new(dataset, *filters).apply(params)
-    end
-
-    # Mount Rack::Reducer as middleware
-    # @deprecated
-    #   Rack::Reducer.new will become an alias of ::create in v2.0.
-    #   To mount middleware that will still work in 2.0, write
-    #   "use Rack::Reducer::Middleware" instead of "use Rack::Reducer"
-    def self.new(app, options = {})
-      warn "#{caller(1..1).first}}\n#{Warnings[:new]}"
-      Middleware.new(app, options)
-    end
-
-    # Extend Rack::Reducer to get +reduce+ and +reduces+ as class-methods
-    #
-    # @example Make an "Artists" model reducible
-    #   class Artist < SomeORM::Model
-    #     extend Rack::Reducer
-    #     reduces self.all, filters: [
-    #       lambda { |name:| where(name: name) },
-    #       lambda { |genre:| where(genre: genre) },
-    #     ]
-    #   end
-    #   Artist.reduce(params)
-    #
-    # @deprecated
-    #   Rack::Reducer's mixin-style is deprecated and may be removed in 2.0.
-    #   To keep using Rack::Reducer in your models, create a Reducer constant.
-    #     class MyModel < ActiveRecord::Base
-    #       MyReducer = Rack::Reducer.create(dataset, *filter_functions)
-    #     end
-    #     MyModel::MyReducer.call(params)
-    def reduces(dataset, filters:)
-      warn "#{caller(1..1).first}}\n#{Warnings[:reduces]}"
-      reducer = Reduction.new(dataset, *filters)
-      define_singleton_method :reduce do |params|
-        reducer.apply(params)
+    def initialize(dataset, *filters)
+      @dataset = dataset
+      @filters = filters
+      @default_filters = filters.select do |filter|
+        filter.required_argument_names.empty?
       end
     end
+
+    # Run `@filters` against `url_params`
+    # @param [Hash, ActionController::Parameters, nil] url_params
+    #   a Rack-compatible params hash
+    # @return `@dataset` with the matching filters applied
+    def apply(url_params)
+      if url_params.empty?
+        # Return early with the unfiltered dataset if no default filters exist
+        return @dataset if @default_filters.empty?
+
+        # Run only the default filters
+        filters, params = @default_filters, EMPTY_PARAMS
+      else
+        # This request really does want filtering; run a full reduction
+        filters, params = @filters, url_params.to_unsafe_h.symbolize_keys
+      end
+
+      reduce(params, filters)
+    end
+
+    private
+
+    def reduce(params, filters)
+      filters.reduce(@dataset) do |data, filter|
+        next data unless filter.satisfies?(params)
+
+        data.instance_exec(
+          **params.slice(*filter.all_argument_names),
+          &filter
+        )
+      end
+    end
+
+    EMPTY_PARAMS = {}.freeze
+    private_constant :EMPTY_PARAMS
   end
 end
