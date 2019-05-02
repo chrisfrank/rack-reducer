@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 2.0.0 - Unreleased
+## 2.0.0 - 2019-05-02
 
 ### Removed
 - Drop the deprecated 'mixin-style' API.
@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Update `Rack::Reducer.new` to instantiate a reducer, instead of reserving it
   for the old Middleware API.
-- Refer to `::new` intead of `::create` in the docs. Note that `::create` remains
-  supported as an alias of `::new`.
+- Refer to `::new` intead of `::create` in the docs. Note that `::create`
+  remains supported as an alias of `::new`.
 
 
 ## 1.1.2 - 2019-04-24
