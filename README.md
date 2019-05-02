@@ -2,6 +2,7 @@ Rack::Reducer
 ==========================================
 [![Build Status](https://travis-ci.org/chrisfrank/rack-reducer.svg?branch=master)](https://travis-ci.org/chrisfrank/rack-reducer)
 [![Maintainability](https://api.codeclimate.com/v1/badges/675e7a654c7e11c24b9f/maintainability)](https://codeclimate.com/github/chrisfrank/rack-reducer/maintainability)
+[![Version](https://img.shields.io/gem/v/rack-reducer.svg)](https://rubygems.org/gems/rack-reducer)
 
 Declaratively filter data via URL params, in any Rack app, with any ORM.
 
