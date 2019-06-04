@@ -161,7 +161,7 @@ class Artist < ApplicationRecord
     ->(name:) { by_name(name) },
     ->(genre:) { where(genre: genre) },
     ->(sort:) { order(sort.to_sym) }
-  ]
+  )
 
   scope :by_name, lambda { |name|
     where('lower(name) like ?', "%#{name.downcase}%")
