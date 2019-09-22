@@ -31,7 +31,7 @@ Process.respond_to?(:fork) && RSpec.describe('in a Rails app') do
 
     Artist = Class.new(ActiveRecord::Base)
 
-    Fixtures::DB[:artists].each { |row|Artist.create(row) }
+    Fixtures::DB[:artists].each { |row| Artist.create(row) }
 
     ArtistsController = Class.new(ActionController::API) do
       RailsReducer = Rack::Reducer.new(
@@ -72,17 +72,15 @@ Process.respond_to?(:fork) && RSpec.describe('in a Rails app') do
 
   it 'tracks updates to the backend between requests' do
     pid = Process.fork do
-      res = get("/query?name=ZA")
-      expect(res.json.count).to eq(1)
+      get("/") { |res| expect(res.json.count).to eq(6) }
 
-      Artist.create!(name: "RZA", genre: "hip hop")
+      Artist.create!(name: "RZA")
 
-      res = get("/query?name=ZA")
-      expect(res.json.count).to eq(2)
+      get("/") { |res| expect(res.json.count).to eq(7) }
 
       Artist.find_by(name: "RZA").destroy
 
-      get("/query?name=ZA") { |res| expect(res.json.count).to eq(1) }
+      get("/") { |res| expect(res.json.count).to eq(6) }
     end
     Process.wait(pid)
   end
