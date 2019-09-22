@@ -26,13 +26,6 @@ RSpec.describe 'Rack::Reducer' do
     end
   end
 
-  it 'resets state between requests' do
-    get('/artists?name=Blake')
-    get('/artists') do |res|
-      expect(res.json.count).to eq(Fixtures::DB[:artists].count)
-    end
-  end
-
   it 'filters by a single param, e.g. genre' do
     get('/artists?genre=electronic') do |response|
       expect(response.body).to include('Björk')
@@ -62,6 +55,32 @@ RSpec.describe 'Rack::Reducer' do
 
   it 'accepts nil as params' do
     expect(Fixtures::ArtistReducer.apply(nil)).to be_truthy
+  end
+
+  describe 'between requests' do
+    original_count = Fixtures::DB[:artists].count
+
+    it 'resets filter state' do
+      get('/artists?name=Blake')
+      get('/artists') do |res|
+        expect(res.json.count).to eq(Fixtures::DB[:artists].count)
+      end
+    end
+
+    it 'tracks updates to the backend' do
+      get('/artists')
+
+      Fixtures::DB[:artists][0][:name] = "Lizzo"
+      Fixtures::DB[:artists] << { name: 'New Artist' }
+
+      get('/artists') do |response|
+        expect(response.json.count).to eq(original_count + 1)
+        expect(response.json.dig(0, 'name')).to eq('Lizzo')
+      end
+
+      Fixtures::DB[:artists].pop
+      Fixtures::DB[:artists][0][:name] = "Blake Mills"
+    end
   end
 
   describe 'with default filters' do

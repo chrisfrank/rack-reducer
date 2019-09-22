@@ -2,9 +2,13 @@ require 'spec_helper'
 require_relative 'fixtures'
 
 Process.respond_to?(:fork) && RSpec.describe('in a Rails app') do
+  using SpecRefinements
   BuildRailsApp = lambda do
     require 'action_controller/railtie'
+    require 'active_record'
     require 'securerandom'
+    require 'sqlite3'
+
     app = Class.new(Rails::Application) do
       routes.append do
         get "/", to: "artists#index"
@@ -16,14 +20,33 @@ Process.respond_to?(:fork) && RSpec.describe('in a Rails app') do
       config.secret_key_base = SecureRandom.hex(64)
     end
 
+    ActiveRecord::Base.establish_connection("sqlite3::memory:")
+    ActiveRecord::Schema.define do
+      create_table :artists do |t|
+        t.string  :name
+        t.string  :genre
+        t.integer  :release_count
+      end
+    end
+
+    Artist = Class.new(ActiveRecord::Base)
+
+    Fixtures::DB[:artists].each { |row|Artist.create(row) }
+
     ArtistsController = Class.new(ActionController::API) do
+      RailsReducer = Rack::Reducer.new(
+        Artist.all,
+        ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
+        ->(genre:) { where(genre: genre) },
+      )
+
       def index
-        @artists = Fixtures::ArtistReducer.apply(params)
+        @artists = RailsReducer.apply(params)
         render json: @artists
       end
 
       def query
-        @artists = Fixtures::ArtistReducer.apply(request.query_parameters)
+        @artists = RailsReducer.apply(request.query_parameters)
         render json: @artists
       end
     end
@@ -47,7 +70,24 @@ Process.respond_to?(:fork) && RSpec.describe('in a Rails app') do
     Process.wait(pid)
   end
 
-  it 'does not load ActiveSupport into global scope b/c of this spec' do
+  it 'tracks updates to the backend between requests' do
+    pid = Process.fork do
+      res = get("/query?name=ZA")
+      expect(res.json.count).to eq(1)
+
+      Artist.create!(name: "RZA", genre: "hip hop")
+
+      res = get("/query?name=ZA")
+      expect(res.json.count).to eq(2)
+
+      Artist.find_by(name: "RZA").destroy
+
+      get("/query?name=ZA") { |res| expect(res.json.count).to eq(1) }
+    end
+    Process.wait(pid)
+  end
+
+  it 'does not pollute the global Ruby scope' do
     expect { ''.blank? }.to raise_error(NoMethodError)
   end
 end
