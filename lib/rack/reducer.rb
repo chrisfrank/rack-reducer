@@ -51,7 +51,7 @@ module Rack
     def apply(url_params)
       if url_params.empty?
         # Return early with the unfiltered dataset if no default filters exist
-        return @dataset if @default_filters.empty?
+        return fresh_dataset if @default_filters.empty?
 
         # Run only the default filters
         filters, params = @default_filters, EMPTY_PARAMS
@@ -66,7 +66,7 @@ module Rack
     private
 
     def reduce(params, filters)
-      filters.reduce(@dataset) do |data, filter|
+      filters.reduce(fresh_dataset) do |data, filter|
         next data unless filter.satisfies?(params)
 
         data.instance_exec(
@@ -74,6 +74,13 @@ module Rack
           &filter
         )
       end
+    end
+
+    # Rails +Model.all+ relations get query-cached by default, which has caused
+    # filterless requests to load stale data. This method busts the query cache.
+    # See https://github.com/chrisfrank/rack-reducer/issues/11
+    def fresh_dataset
+      @dataset.clone
     end
 
     EMPTY_PARAMS = {}.freeze
