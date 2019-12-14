@@ -38,6 +38,10 @@ Process.respond_to?(:fork) && RSpec.describe('in a Rails app') do
         Artist.all,
         ->(name:) { where('lower(name) like ?', "%#{name.downcase}%") },
         ->(genre:) { where(genre: genre) },
+        ->(prolificacy:) {
+          range = prolificacy[:min].to_i..prolificacy[:max].to_i
+          where(release_count: range)
+        },
       )
 
       def index
@@ -59,6 +63,9 @@ Process.respond_to?(:fork) && RSpec.describe('in a Rails app') do
   it 'works with ActionController::Parameters' do
     pid = Process.fork do
       get('/') { |res| expect(res.status).to eq(200) }
+      get('/?prolificacy[min]=2&prolificacy[max]=3') { |res|
+        expect(res.json.count).to eq(4)
+      }
     end
     Process.wait pid
   end
@@ -66,6 +73,9 @@ Process.respond_to?(:fork) && RSpec.describe('in a Rails app') do
   it 'works with request.query_parameters' do
     pid = Process.fork do
       get('/query') { |res| expect(res.status).to eq(200) }
+      get('/query?prolificacy[min]=2&prolificacy[max]=3') { |res|
+        expect(res.json.count).to eq(4)
+      }
     end
     Process.wait(pid)
   end
