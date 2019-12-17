@@ -1,11 +1,11 @@
 module Fixtures
   DB = {
     artists: [
-      { name: 'Blake Mills', genre: 'alternative', release_count: 3 },
+      { name: 'Blake Mills', genre: 'alternative', release_count: 2 },
       { name: 'Björk', genre: 'electronic', release_count: 3 },
       { name: 'James Blake', genre: 'electronic', release_count: 3 },
-      { name: 'Janelle Monae', genre: 'alt-soul', release_count: 3 },
-      { name: 'SZA', genre: 'alt-soul', release_count: 3 },
+      { name: 'Janelle Monae', genre: 'alt-soul', release_count: 2 },
+      { name: 'SZA', genre: 'alt-soul', release_count: 1 },
       { name: 'Chris Frank', genre: 'alt-soul', release_count: nil },
     ]
   }
@@ -19,6 +19,10 @@ module Fixtures
     },
     ->(releases:) {
       select { |item| item[:release_count].to_i == releases.to_i }
+    },
+    ->(prolificacy:) {
+      range = prolificacy[:min].to_i..prolificacy[:max].to_i
+      select { |item| range.include? item[:release_count].to_i }
     },
   ]
 

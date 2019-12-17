@@ -57,7 +57,7 @@ module Rack
         filters, params = @default_filters, EMPTY_PARAMS
       else
         # This request really does want filtering; run a full reduction
-        filters, params = @filters, url_params.to_unsafe_h.symbolize_keys
+        filters, params = @filters, url_params.to_unsafe_h.deep_symbolize_keys
       end
 
       reduce(params, filters)

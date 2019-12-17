@@ -128,9 +128,9 @@ RSpec.describe 'Rack::Reducer' do
     expect(Rack::Reducer.create({}, -> { 'hi' })).to be_a(Rack::Reducer)
   end
 
-  it 'accepts nested params' do
-    get('/artists?range[min]=1&range[max]=100') do |response|
-      expect(response.status).to eq(200)
+  it 'can filter by nested params' do
+    get('/artists?prolificacy[min]=2&prolificacy[max]=3') do |response|
+      expect(response.json.count).to eq(4)
     end
   end
 end
